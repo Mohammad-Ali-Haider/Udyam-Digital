@@ -34,6 +34,15 @@ test("adaptive discovery preserves required needs, refines optional extras and r
     assert.equal(r.recommendation[0].productId, "P04");
     assert.ok(r.state.confirmed.includes("tools"));
     assert.equal(r.mode, "demo");
+    const simple = await discover(
+      fixture.profile,
+      null,
+      "Keep it simple: billing is essential",
+    );
+    assert.ok(
+      !simple.profile.needs.includes("sim"),
+      "simple must not be interpreted as a SIM request",
+    );
   } finally {
     if (key) process.env.OPENROUTER_API_KEY = key;
   }

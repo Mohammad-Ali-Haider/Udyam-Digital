@@ -187,18 +187,19 @@ export class OcrQueue {
         "साफ़ और बड़ी तस्वीर चुनें।",
         "Choose a clear, larger image.",
       );
-    return sharp(buffer, { limitInputPixels: 24_000_000 })
-      .rotate()
-      .resize({
-        width: 1800,
-        height: 2400,
-        fit: "inside",
-        withoutEnlargement: true,
-      })
-      .grayscale()
-      .normalize()
-      .png()
-      .toBuffer();
+    return (
+      sharp(buffer, { limitInputPixels: 24_000_000 })
+        .rotate()
+        .resize({
+          width: 1800,
+          height: 2400,
+          fit: "inside",
+          withoutEnlargement: true,
+        })
+        // Preserve coloured watermarks: aggressive grayscale contrast can merge them into text.
+        .png()
+        .toBuffer()
+    );
   }
   enqueue(
     id: string,

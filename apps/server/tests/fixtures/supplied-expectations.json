@@ -1,0 +1,62 @@
+[
+  {
+    "file": "K01_gst_certificate.png",
+    "kind": "gst",
+    "businessName": "Vindhya Tours & Travels",
+    "address": "Shop/Unit 1, Tech Park Road, Visakhapatnam, Andhra Pradesh - 118383",
+    "expectedIssues": [
+      "gst_inactive"
+    ],
+    "basis": "Image GSTIN 37IHKXV5167L1ZS; supplied registry status Cancelled."
+  },
+  {
+    "file": "K05_gst_certificate.png",
+    "kind": "gst",
+    "businessName": "Balaji Realty LLP",
+    "address": "Shop/Unit 38, Civil Lines, Kochi, Kerala - 752083",
+    "expectedIssues": [],
+    "basis": "Image GSTIN 32TZAXB5481U1Z1; supplied registry Active and matching name/address.",
+    "knownRecognitionFailure": {
+      "issues": [
+        "invalid_gstin",
+        "registry_missing"
+      ],
+      "note": "Tesseract reads the Z as 7 in this supplied specimen. Fail closed and request replacement; never repair the registration identifier to force verification."
+    }
+  },
+  {
+    "file": "K05_gst_certificate.png",
+    "kind": "gst",
+    "businessName": "Different Applicant",
+    "address": "Shop/Unit 38, Civil Lines, Kochi, Kerala - 752083",
+    "expectedIssues": [
+      "business_mismatch"
+    ],
+    "basis": "Same evidence deliberately submitted for a different business profile.",
+    "knownRecognitionFailure": {
+      "issues": [
+        "invalid_gstin",
+        "registry_missing"
+      ],
+      "note": "Tesseract reads the Z as 7 in this supplied specimen. Fail closed and request replacement; never repair the registration identifier to force verification."
+    }
+  },
+  {
+    "file": "K03_address_proof.png",
+    "kind": "address",
+    "businessName": "Ganesh Woodcraft",
+    "address": "Shop/Unit 80, Civil Lines, Nagpur, Maharashtra - 411231",
+    "expectedIssues": [],
+    "basis": "Visually inspected bill date 2026-05-30 is within 90 days of 2026-07-15; name/address match."
+  },
+  {
+    "file": "K03_address_proof.png",
+    "kind": "address",
+    "businessName": "Ganesh Woodcraft",
+    "address": "Different shop address",
+    "expectedIssues": [
+      "address_mismatch"
+    ],
+    "basis": "Same evidence deliberately submitted with a contradictory profile address."
+  }
+]

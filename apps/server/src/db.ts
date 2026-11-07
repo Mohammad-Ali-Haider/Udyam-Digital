@@ -1,6 +1,12 @@
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
-import { mkdirSync, readFileSync, readdirSync, existsSync, copyFileSync } from "node:fs";
+import {
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  existsSync,
+  copyFileSync,
+} from "node:fs";
 import { resolve, dirname } from "node:path";
 import { runtimeRoot, serverRoot } from "./config.js";
 import * as schema from "./schema.js";
@@ -10,19 +16,26 @@ export function openDatabase(path = resolve(runtimeRoot, "udyam.sqlite")) {
   const sqlite = new Database(path);
   const migrationDir = resolve(serverRoot, "drizzle");
   const oldVersion = sqlite.pragma("user_version", { simple: true }) as number;
-  if(path !== ":memory:" && oldVersion < 2 && sqlite.prepare("SELECT name FROM sqlite_master WHERE name='sessions'").get()) {
+  const migrations = readdirSync(migrationDir)
+    .filter((n) => /^\d+.*\.sql$/.test(n))
+    .sort();
+  if (
+    path !== ":memory:" &&
+    oldVersion < migrations.length &&
+    sqlite.prepare("SELECT name FROM sqlite_master WHERE name='sessions'").get()
+  ) {
     sqlite.pragma("wal_checkpoint(TRUNCATE)");
-    const backup = `${path}.before-services-backup`;
-    if(!existsSync(backup)) copyFileSync(path, backup);
+    const backup = `${path}.before-v${migrations.length}-backup`;
+    if (!existsSync(backup)) copyFileSync(path, backup);
   }
   sqlite.pragma("foreign_keys = ON");
   sqlite.pragma("journal_mode = WAL");
-  const migrations = readdirSync(migrationDir).filter(n=>/^\d+.*\.sql$/.test(n)).sort();
-  migrations.forEach((file,index)=>{
-    if(index >= oldVersion) sqlite.transaction(()=>{
-      sqlite.exec(readFileSync(resolve(migrationDir,file),"utf8"));
-      sqlite.pragma(`user_version = ${index+1}`);
-    })();
+  migrations.forEach((file, index) => {
+    if (index >= oldVersion)
+      sqlite.transaction(() => {
+        sqlite.exec(readFileSync(resolve(migrationDir, file), "utf8"));
+        sqlite.pragma(`user_version = ${index + 1}`);
+      })();
   });
   sqlite
     .prepare(

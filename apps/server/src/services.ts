@@ -274,6 +274,11 @@ export function registerServices(app: FastifyInstance, store: Store) {
       profile: s.profile,
       quote,
       kyc,
+      corrections: store.sqlite
+        .prepare(
+          "SELECT document_kind, fields, created_at FROM correction_history WHERE session_id=? ORDER BY created_at",
+        )
+        .all(row.session_id),
       lastActivity: s.activityAt,
       priority: {
         score,

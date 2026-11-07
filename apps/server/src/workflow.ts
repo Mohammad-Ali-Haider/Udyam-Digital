@@ -367,6 +367,15 @@ export async function registerWorkflow(app: FastifyInstance, store: Store) {
       ...(changed ? ["manual_review"] : []),
     ];
     // A correction never erases a failed evidence check.
+    store.sqlite
+      .prepare("INSERT INTO correction_history VALUES(?,?,?,?,?)")
+      .run(
+        randomUUID(),
+        req.sessionId,
+        doc.kind,
+        JSON.stringify(Object.keys(fields)),
+        new Date().toISOString(),
+      );
     store.db
       .update(documents)
       .set({

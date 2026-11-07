@@ -22,7 +22,7 @@ const patterns: Record<Need, RegExp> = {
   cctv: /cctv|camera|कैमरा/i,
   wifi: /wi.?fi|वाई.?फाई/i,
   website: /website|वेबसाइट/i,
-  sim: /sim|सिम/i,
+  sim: /\bsim\b|सिम(?:\s|$)/i,
 };
 const questions = [
   {
