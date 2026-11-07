@@ -14,6 +14,7 @@ import { sessions, quotes, documents, orders } from "./schema.js";
 import { DomainError, products } from "./catalogue.js";
 import { workspaceRoot } from "./config.js";
 import { registerWorkflow } from "./workflow.js";
+import {registerStaffAuth} from "./staff-auth.js";
 
 declare module "fastify" {
   interface FastifyRequest {
@@ -83,6 +84,7 @@ export async function buildApp(
   await app.register(multipart, {
     limits: { fileSize: 10 * 1024 * 1024, files: 1, fields: 4 },
   });
+  registerStaffAuth(app,store);
   app.setErrorHandler((error, req, reply) => {
     if (error instanceof ZodError)
       return reply
@@ -144,6 +146,7 @@ export async function buildApp(
         "Origin is not allowed.",
         403,
       );
+    if (path.startsWith("/api/v1/staff/") || path.startsWith("/api/v1/demo/orders/")) return;
     if (path === "/api/v1/sessions" && req.method === "POST") return;
     const bearer = req.headers.authorization?.startsWith("Bearer ")
       ? req.headers.authorization.slice(7)
@@ -218,6 +221,7 @@ export async function buildApp(
         tokenHash: hash(token),
         transport: platform,
         updatedAt: Date.now(),
+        activityAt: Date.now(),
         messages: [],
         recommendation: [],
       })
@@ -264,15 +268,15 @@ export async function buildApp(
       );
     const serviceChanged =
       current.profile &&
-      JSON.stringify({ ...current.profile, language: "en" }) !==
-        JSON.stringify({ ...profile, language: "en" });
+      ["cityTier","employees","counters","budget","internet","fibreAvailable","needs","hasGstin"].some(k=>JSON.stringify(current.profile![k as keyof typeof profile])!==JSON.stringify(profile[k as keyof typeof profile]));
     store.db.transaction((tx) => {
       tx.update(sessions)
         .set({
           profile,
           revision: revision + 1,
+          activityAt: Date.now(),
           ...(serviceChanged
-            ? { recommendation: [], messages: [], advisorStep: 0 }
+            ? { recommendation: [], messages: [], advisorStep: 0, advisorState:null }
             : {}),
           ...(identityChanged ? { consent: null } : {}),
         })

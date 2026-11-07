@@ -1,0 +1,11 @@
+ALTER TABLE sessions ADD COLUMN advisor_state TEXT;
+ALTER TABLE sessions ADD COLUMN activity_at INTEGER NOT NULL DEFAULT 0;
+CREATE TABLE staff_users(id TEXT PRIMARY KEY, username TEXT NOT NULL UNIQUE, role TEXT NOT NULL, password_hash TEXT NOT NULL);
+CREATE TABLE staff_sessions(token_hash TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES staff_users(id) ON DELETE CASCADE, expires_at INTEGER NOT NULL);
+CREATE TABLE assistance(id TEXT PRIMARY KEY, session_id TEXT NOT NULL UNIQUE REFERENCES sessions(id) ON DELETE CASCADE, assignee TEXT REFERENCES staff_users(id), revision INTEGER NOT NULL DEFAULT 0, data TEXT NOT NULL);
+CREATE TABLE installation(order_id TEXT PRIMARY KEY REFERENCES orders(id) ON DELETE CASCADE, session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE, assignee TEXT REFERENCES staff_users(id), revision INTEGER NOT NULL DEFAULT 0, data TEXT NOT NULL);
+CREATE TABLE services(id TEXT PRIMARY KEY, session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE, order_id TEXT NOT NULL REFERENCES orders(id) ON DELETE CASCADE, product_id TEXT NOT NULL, data TEXT NOT NULL, UNIQUE(order_id, product_id));
+CREATE TABLE statements(id TEXT PRIMARY KEY, session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE, order_id TEXT NOT NULL UNIQUE REFERENCES orders(id) ON DELETE CASCADE, data TEXT NOT NULL);
+CREATE TABLE tickets(id TEXT PRIMARY KEY, session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE, assignee TEXT REFERENCES staff_users(id), revision INTEGER NOT NULL DEFAULT 0, request_id TEXT NOT NULL, data TEXT NOT NULL, UNIQUE(session_id,request_id));
+CREATE TABLE audit(id TEXT PRIMARY KEY, session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE, staff_id TEXT NOT NULL, action TEXT NOT NULL, created_at TEXT NOT NULL);
+UPDATE sessions SET activity_at=updated_at;

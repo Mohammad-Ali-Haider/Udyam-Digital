@@ -24,6 +24,8 @@ export const sessions = sqliteTable("sessions", {
     .notNull()
     .default([]),
   advisorStep: integer("advisor_step").notNull().default(0),
+  advisorState: text("advisor_state", {mode:"json"}).$type<import("@udyam/shared").AdvisorState | null>(),
+  activityAt: integer("activity_at").notNull().default(0),
   consent: text("consent", { mode: "json" }).$type<{
     version: string;
     language: Language;

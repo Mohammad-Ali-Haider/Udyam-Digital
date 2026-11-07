@@ -4,10 +4,10 @@ export const languageSchema = z.enum(["en", "hi"]);
 export type Language = z.infer<typeof languageSchema>;
 export const profileSchema = z.object({
   businessName: z.string().trim().min(2).max(150),
-  signatoryName: z.string().trim().min(2).max(100),
+  signatoryName: z.string().trim().max(100).default(""),
   city: z.string().trim().min(2).max(80),
   state: z.string().trim().min(2).max(80),
-  address: z.string().trim().min(8).max(300),
+  address: z.string().trim().max(300).default(""),
   cityTier: z.union([z.literal(1), z.literal(2)]),
   employees: z.number().int().min(1).max(100),
   counters: z.number().int().min(1).max(20),
@@ -102,6 +102,7 @@ export interface Order {
   estimates: { productId: string; date: string }[];
 }
 export interface Journey {
+  advisorState?: AdvisorState | null;
   revision: number;
   profile: BusinessProfile | null;
   messages: Message[];
@@ -112,6 +113,19 @@ export interface Journey {
   order: Order | null;
   advisorStep: number;
 }
+
+export type Need = BusinessProfile["needs"][number];
+export interface RecommendationOption { id:"essential"|"recommended"; selection:Selection; monthlyPaise:number; setupPaise:number; shortfallPaise:number; reasons: {productId:string; en:string; hi:string}[]; excluded:Need[] }
+export interface AdvisorState { ready:boolean; turns:number; confirmed:string[]; mustHave:Need[]; optional:Need[]; nextQuestion:{en:string;hi:string;options:{en:string;hi:string}[]}; options:RecommendationOption[] }
+export type StaffRole="operations"|"partner";
+export interface StaffUser {id:string;username:string;role:StaffRole}
+export interface ServiceMessage {id:string;author:"customer"|"staff";text:string;at:string;internal?:boolean}
+export interface AssistanceCase {id:string;revision:number;assignee:string|null;explicit:boolean;allowStalled:boolean;reason:string;stage:string;status:"open"|"closed";messages:ServiceMessage[];createdAt:string;fixture?:boolean}
+export interface InstallationAppointment {revision:number;assignee:string|null;start?:string;end?:string;team?:string;delayReason?:string}
+export interface Service {id:string;orderId:string;product:Product;quantity:number;activatedAt:string;status:"active";simulation:true}
+export interface BillingStatement {id:string;orderId:string;issuedAt:string;period:string;lines:QuoteLine[];monthlyPaise:number;setupPaise:number;totalPaise:number;demo:true}
+export interface SupportTicket {id:string;revision:number;assignee:string|null;category:"connectivity"|"installation"|"billing"|"other";subject:string;status:"open"|"in_progress"|"waiting_customer"|"resolved";messages:ServiceMessage[];createdAt:string}
+export interface CustomerHome {order:Order|null;services:Service[];statements:BillingStatement[];tickets:SupportTicket[];installation:InstallationAppointment|null}
 export interface ApiError {
   code: string;
   message: string;
