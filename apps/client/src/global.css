@@ -1,0 +1,5 @@
+html, body, #root { min-height: 100%; background: #101114; }
+* { box-sizing: border-box; }
+:focus-visible { outline: 3px solid #ed7d89 !important; outline-offset: 4px; }
+input, textarea { caret-color: #ed7d89; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
