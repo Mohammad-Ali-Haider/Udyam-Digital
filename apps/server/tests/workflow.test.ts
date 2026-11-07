@@ -251,18 +251,18 @@ test("full order flow enforces prerequisites, isolation, quote revisions and ide
   const advanced = await request("POST", `/demo/orders/${order.id}/advance`, {
     expectedStatus: "confirmed",
   });
-  assert.equal(advanced.json().status, "scheduled");
+  assert.ok([401, 403].includes(advanced.statusCode));
   assert.equal(
     (
       await request("POST", `/demo/orders/${order.id}/advance`, {
         expectedStatus: "confirmed",
       })
     ).statusCode,
-    409,
+    403,
   );
   assert.equal(
     (await request("GET", "/journey")).json().order.status,
-    "scheduled",
+    "confirmed",
   );
   await request("DELETE", "/session");
   assert.equal((await request("GET", `/orders/${order.id}`)).statusCode, 401);

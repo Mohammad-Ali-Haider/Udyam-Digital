@@ -17,7 +17,7 @@ import { sessions, quotes, documents, orders } from "./schema.js";
 import type { Store } from "./db.js";
 import { sessionFor, currentQuote, ensureEditable } from "./app.js";
 import { calculateQuote, DomainError } from "./catalogue.js";
-import { advise } from "./advisor.js";
+import { discover, initialAdvisor } from "./discovery.js";
 import { getKyc, OcrQueue } from "./kyc.js";
 import { serverRoot } from "./config.js";
 
@@ -42,6 +42,11 @@ export async function registerWorkflow(app: FastifyInstance, store: Store) {
       messages: session.messages,
       recommendation: session.recommendation,
       advisorStep: session.advisorStep,
+      advisorState:
+        session.advisorState ||
+        (session.profile
+          ? initialAdvisor(session.profile, session.advisorStep >= 6)
+          : null),
       quote: currentQuote(store, req.sessionId),
       consent: session.consent,
       kyc: getKyc(store, req.sessionId),
@@ -71,10 +76,12 @@ export async function registerWorkflow(app: FastifyInstance, store: Store) {
         "बंडल की समीक्षा करें या नया डेमो शुरू करें।",
         "Review your bundle or start a new demo.",
       );
-    const result = await advise(
+    const result = await discover(
       { ...session.profile, language: language || session.profile.language },
-      session.advisorStep,
+      session.advisorState ||
+        initialAdvisor(session.profile, session.advisorStep >= 6),
       text,
+      session.messages,
     );
     const latest = sessionFor(store, req.sessionId);
     if (latest.revision !== session.revision)
@@ -104,6 +111,7 @@ export async function registerWorkflow(app: FastifyInstance, store: Store) {
       tx.update(sessions)
         .set({
           profile: result.profile,
+          advisorState: result.state,
           messages,
           recommendation: result.recommendation,
           advisorStep: Math.min(
@@ -114,10 +122,11 @@ export async function registerWorkflow(app: FastifyInstance, store: Store) {
         })
         .where(eq(sessions.id, req.sessionId))
         .run();
-      tx.update(quotes)
-        .set({ current: false })
-        .where(eq(quotes.sessionId, req.sessionId))
-        .run();
+      if (JSON.stringify(result.profile) !== JSON.stringify(session.profile))
+        tx.update(quotes)
+          .set({ current: false })
+          .where(eq(quotes.sessionId, req.sessionId))
+          .run();
     });
     return { saved: true, mode: result.mode };
   });
@@ -197,6 +206,16 @@ export async function registerWorkflow(app: FastifyInstance, store: Store) {
         "quote_required",
         "पहले कोटेशन स्वीकार करें।",
         "Accept the quote first.",
+      );
+    const identity = requireProfile(req.sessionId).profile;
+    if (
+      identity.signatoryName.trim().length < 2 ||
+      identity.address.trim().length < 8
+    )
+      throw new DomainError(
+        "identity_required",
+        "हस्ताक्षरकर्ता और पूरा पता दें।",
+        "Provide the signatory name and full address before KYC.",
       );
     const record = {
       version: consent.version,
@@ -495,66 +514,13 @@ export async function registerWorkflow(app: FastifyInstance, store: Store) {
         profile,
       );
     });
-    app.post("/api/v1/demo/orders/:id/advance", async (req) => {
-      const { id } = z.object({ id: z.string() }).parse(req.params);
-      const { expectedStatus, delay } = z
-        .object({
-          expectedStatus: z.enum([
-            "confirmed",
-            "scheduled",
-            "installing",
-            "activated",
-          ]),
-          delay: z.boolean().default(false),
-        })
-        .parse(req.body);
-      return store.db.transaction((tx) => {
-        const order = getOrder(req.sessionId, id);
-        if (order.status !== expectedStatus)
-          throw new DomainError(
-            "stale_status",
-            "स्थिति बदल चुकी है। ताज़ा करें।",
-            "The order status changed. Refresh.",
-            409,
-          );
-        if (order.status === "activated")
-          throw new DomainError(
-            "already_active",
-            "सभी सेवाएं सक्रिय हैं।",
-            "All services are already active.",
-            409,
-          );
-        const stages = [
-          "confirmed",
-          "scheduled",
-          "installing",
-          "activated",
-        ] as const;
-        const status = delay
-          ? order.status
-          : stages[stages.indexOf(order.status) + 1];
-        const updated: Order = {
-          ...order,
-          status,
-          events: [
-            ...order.events,
-            {
-              id: randomUUID(),
-              status,
-              type: delay ? "delay" : "stage",
-              createdAt: new Date().toISOString(),
-            },
-          ],
-          estimates: delay
-            ? order.estimates.map((e) => ({
-                ...e,
-                date: new Date(Date.parse(e.date) + 86400000).toISOString(),
-              }))
-            : order.estimates,
-        };
-        tx.update(orders).set({ data: updated }).where(eq(orders.id, id)).run();
-        return updated;
-      });
+    app.post("/api/v1/demo/orders/:id/advance", async () => {
+      throw new DomainError(
+        "staff_workflow_required",
+        "स्टाफ पोर्टल से इंस्टॉलेशन अपडेट करें।",
+        "Use the staff installation workflow.",
+        410,
+      );
     });
   }
   return ocr;

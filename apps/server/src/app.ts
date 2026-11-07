@@ -14,7 +14,8 @@ import { sessions, quotes, documents, orders } from "./schema.js";
 import { DomainError, products } from "./catalogue.js";
 import { workspaceRoot } from "./config.js";
 import { registerWorkflow } from "./workflow.js";
-import {registerStaffAuth} from "./staff-auth.js";
+import { registerStaffAuth } from "./staff-auth.js";
+import { registerServices } from "./services.js";
 
 declare module "fastify" {
   interface FastifyRequest {
@@ -84,49 +85,41 @@ export async function buildApp(
   await app.register(multipart, {
     limits: { fileSize: 10 * 1024 * 1024, files: 1, fields: 4 },
   });
-  registerStaffAuth(app,store);
+  registerStaffAuth(app, store);
   app.setErrorHandler((error, req, reply) => {
     if (error instanceof ZodError)
-      return reply
-        .code(400)
-        .send({
-          code: "invalid_input",
-          message: "Check the highlighted fields.",
-          messageHi: "दर्ज जानकारी जाँचें।",
-          retryable: false,
-          fields: Object.fromEntries(
-            error.issues.map((i) => [i.path.join("."), i.message]),
-          ),
-        });
+      return reply.code(400).send({
+        code: "invalid_input",
+        message: "Check the highlighted fields.",
+        messageHi: "दर्ज जानकारी जाँचें।",
+        retryable: false,
+        fields: Object.fromEntries(
+          error.issues.map((i) => [i.path.join("."), i.message]),
+        ),
+      });
     if (error instanceof DomainError)
-      return reply
-        .code(error.status)
-        .send({
-          code: error.code,
-          message: error.message,
-          messageHi: error.messageHi,
-          retryable: error.status >= 500,
-        });
+      return reply.code(error.status).send({
+        code: error.code,
+        message: error.message,
+        messageHi: error.messageHi,
+        retryable: error.status >= 500,
+      });
     const status = (error as { statusCode?: number }).statusCode;
     if (status && status < 500)
-      return reply
-        .code(status)
-        .send({
-          code: "invalid_request",
-          message:
-            "The request could not be processed. Check the file and try again.",
-          messageHi: "अनुरोध पूरा नहीं हुआ। फ़ाइल जाँचकर फिर कोशिश करें।",
-          retryable: false,
-        });
-    app.log.error({ name: (error as Error).name }, "Request failed");
-    return reply
-      .code(500)
-      .send({
-        code: "server_error",
-        message: "Something went wrong. Please retry.",
-        messageHi: "कुछ गड़बड़ हुई। फिर कोशिश करें।",
-        retryable: true,
+      return reply.code(status).send({
+        code: "invalid_request",
+        message:
+          "The request could not be processed. Check the file and try again.",
+        messageHi: "अनुरोध पूरा नहीं हुआ। फ़ाइल जाँचकर फिर कोशिश करें।",
+        retryable: false,
       });
+    app.log.error({ name: (error as Error).name }, "Request failed");
+    return reply.code(500).send({
+      code: "server_error",
+      message: "Something went wrong. Please retry.",
+      messageHi: "कुछ गड़बड़ हुई। फिर कोशिश करें।",
+      retryable: true,
+    });
   });
   app.addHook("preHandler", async (req, reply) => {
     const path = req.url.split("?")[0];
@@ -146,7 +139,11 @@ export async function buildApp(
         "Origin is not allowed.",
         403,
       );
-    if (path.startsWith("/api/v1/staff/") || path.startsWith("/api/v1/demo/orders/")) return;
+    if (
+      path.startsWith("/api/v1/staff/") ||
+      path.startsWith("/api/v1/demo/orders/")
+    )
+      return;
     if (path === "/api/v1/sessions" && req.method === "POST") return;
     const bearer = req.headers.authorization?.startsWith("Bearer ")
       ? req.headers.authorization.slice(7)
@@ -193,7 +190,12 @@ export async function buildApp(
     req.sessionId = session.id;
     store.db
       .update(sessions)
-      .set({ updatedAt: Date.now() })
+      .set({
+        updatedAt: Date.now(),
+        ...(!["GET", "HEAD"].includes(req.method)
+          ? { activityAt: Date.now() }
+          : {}),
+      })
       .where(eq(sessions.id, session.id))
       .run();
     if (!bearer)
@@ -268,7 +270,20 @@ export async function buildApp(
       );
     const serviceChanged =
       current.profile &&
-      ["cityTier","employees","counters","budget","internet","fibreAvailable","needs","hasGstin"].some(k=>JSON.stringify(current.profile![k as keyof typeof profile])!==JSON.stringify(profile[k as keyof typeof profile]));
+      [
+        "cityTier",
+        "employees",
+        "counters",
+        "budget",
+        "internet",
+        "fibreAvailable",
+        "needs",
+        "hasGstin",
+      ].some(
+        (k) =>
+          JSON.stringify(current.profile![k as keyof typeof profile]) !==
+          JSON.stringify(profile[k as keyof typeof profile]),
+      );
     store.db.transaction((tx) => {
       tx.update(sessions)
         .set({
@@ -276,7 +291,12 @@ export async function buildApp(
           revision: revision + 1,
           activityAt: Date.now(),
           ...(serviceChanged
-            ? { recommendation: [], messages: [], advisorStep: 0, advisorState:null }
+            ? {
+                recommendation: [],
+                messages: [],
+                advisorStep: 0,
+                advisorState: null,
+              }
             : {}),
           ...(identityChanged ? { consent: null } : {}),
         })
@@ -309,6 +329,7 @@ export async function buildApp(
   );
   expiryTimer.unref();
   const ocr = await registerWorkflow(app, store);
+  registerServices(app, store);
   app.addHook("onClose", async () => {
     clearInterval(expiryTimer);
     await ocr.close();
@@ -326,7 +347,7 @@ export async function serveWeb(
   app.setNotFoundHandler((req, reply) => {
     if (
       req.method === "GET" &&
-      /^\/(?:language|business|advisor|bundle|checkout|kyc|settings|orders\/[\w-]+)?\/?$/.test(
+      /^\/(?:language|business|advisor|bundle|checkout|kyc|settings|home|services|bills|support|assistance|staff(?:\/[\w-]+)?|orders\/[\w-]+)?\/?$/.test(
         req.url.split("?")[0],
       )
     )

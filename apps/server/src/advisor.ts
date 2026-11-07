@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { advisorQuestions, type BusinessProfile } from "@udyam/shared";
+import {
+  advisorQuestions,
+  type BusinessProfile,
+  type Message,
+  type Need,
+} from "@udyam/shared";
 import { recommend, products } from "./catalogue.js";
 
 export function redactIdentifiers(text: string) {
@@ -51,9 +56,16 @@ export async function advise(
   profile: BusinessProfile,
   step: number,
   text: string,
+  discovery?: {
+    question: string;
+    history: Message[];
+    mustHave: Need[];
+    optional: Need[];
+  },
 ) {
-  let next = applyDemoAnswer(profile, step, text);
+  let next = applyDemoAnswer(profile, discovery ? -1 : step, text);
   const following =
+    discovery?.question ||
     advisorQuestions[Math.min(step + 1, advisorQuestions.length - 1)][
       profile.language
     ];
@@ -75,6 +87,8 @@ export async function advise(
         internet: next.internet,
         fibreAvailable: next.fibreAvailable,
         hasGstin: next.hasGstin,
+        mustHave: discovery?.mustHave,
+        optional: discovery?.optional,
       };
       const response = await fetch(
         "https://openrouter.ai/api/v1/chat/completions",
@@ -109,7 +123,22 @@ export async function advise(
                   .map((p) => p.name)
                   .join(", ")}.`,
               },
-              { role: "user", content: redactIdentifiers(text) },
+              ...(discovery?.history || [])
+                .filter((m) => m.role === "user")
+                .map((m) => ({
+                  role: "user",
+                  content: redactIdentifiers(m.text)
+                    .replaceAll(profile.businessName, "[shop]")
+                    .replaceAll(profile.signatoryName || "\u0000", "[name]")
+                    .replaceAll(profile.address || "\u0000", "[address]"),
+                })),
+              {
+                role: "user",
+                content: redactIdentifiers(text)
+                  .replaceAll(profile.businessName, "[shop]")
+                  .replaceAll(profile.signatoryName || "\u0000", "[name]")
+                  .replaceAll(profile.address || "\u0000", "[address]"),
+              },
             ],
             response_format: {
               type: "json_schema",
