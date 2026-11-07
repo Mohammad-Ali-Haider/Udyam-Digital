@@ -1,3 +1,4 @@
+import { HelpPanel } from "../components/help-panel";
 import { CheckControl } from "../components/check-control";
 import { useState } from "react";
 import { Text, Divider, useTheme } from "react-native-paper";
@@ -110,6 +111,7 @@ function Review({ journey }: { journey: Journey }) {
             {t("Accept & verify business", "स्वीकार करें और सत्यापन करें")}
           </Action>
         </Panel>
+        <HelpPanel stage="checkout" />
       </Columns>
     </Shell>
   );

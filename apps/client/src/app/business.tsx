@@ -173,17 +173,12 @@ function ProfileForm({ journey }: { journey: Journey }) {
       >
         <Panel>
           {field("businessName", t("Shop name", "दुकान का नाम"))}
-          {field(
-            "signatoryName",
-            t("Owner / authorized signatory", "मालिक / अधिकृत हस्ताक्षरकर्ता"),
-          )}
           <View style={{ flexDirection: "row", gap: 12 }}>
             <View style={{ flex: 1 }}>{field("city", t("City", "शहर"))}</View>
             <View style={{ flex: 1 }}>
               {field("state", t("State", "राज्य"))}
             </View>
           </View>
-          {field("address", t("Full shop address", "दुकान का पूरा पता"))}
           <Text>{t("City category", "शहर की श्रेणी")}</Text>
           <SegmentedButtons
             value={String(profile.cityTier)}

@@ -3,6 +3,15 @@ import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
 
 export const storage = {
+  async removePrefix(prefix: string) {
+    const keys =
+      Platform.OS === "web"
+        ? Object.keys(localStorage)
+        : await AsyncStorage.getAllKeys();
+    await Promise.all(
+      keys.filter((k) => k.startsWith(prefix)).map((k) => storage.remove(k)),
+    );
+  },
   async get(key: string) {
     return Platform.OS === "web"
       ? typeof localStorage === "undefined"

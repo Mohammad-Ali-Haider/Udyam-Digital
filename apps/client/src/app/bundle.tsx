@@ -232,7 +232,10 @@ function BundleEditor({ journey }: { journey: Journey }) {
                       <Row>
                         <IconButton
                           icon="minus"
-                          accessibilityLabel={t("Decrease quantity", "मात्रा घटाएं")}
+                          accessibilityLabel={t(
+                            "Decrease quantity",
+                            "मात्रा घटाएं",
+                          )}
                           disabled={selected.quantity <= 1 || update.isPending}
                           onPress={() =>
                             update.mutate(
@@ -249,7 +252,10 @@ function BundleEditor({ journey }: { journey: Journey }) {
                         </Text>
                         <IconButton
                           icon="plus"
-                          accessibilityLabel={t("Increase quantity", "मात्रा बढ़ाएं")}
+                          accessibilityLabel={t(
+                            "Increase quantity",
+                            "मात्रा बढ़ाएं",
+                          )}
                           disabled={selected.quantity >= 20 || update.isPending}
                           onPress={() =>
                             update.mutate(

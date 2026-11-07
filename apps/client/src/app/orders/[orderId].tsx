@@ -1,304 +1,156 @@
+import { useState } from "react";
 import { View } from "react-native";
-import { Text, Icon, useTheme, Divider } from "react-native-paper";
-import { useLocalSearchParams } from "expo-router";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import type { Order } from "@udyam/shared";
-import { useApp, useJourney, useRefresh } from "../../lib/provider";
+import { Text } from "react-native-paper";
+import { router, useLocalSearchParams } from "expo-router";
+import type { CustomerHome, Order } from "@udyam/shared";
+import { useApp } from "../../lib/provider";
+import { useResource, stateLabel } from "../../lib/services";
+import { downloadCsv } from "../../lib/download";
 import {
   Shell,
   Title,
   Panel,
   Columns,
-  Row,
   Action,
-  ErrorNotice,
   Loading,
+  ErrorNotice,
   Badge,
 } from "../../components/ui";
 import { BundleSummary } from "../../components/bundle-summary";
-import { productCopy } from "../../lib/products";
-
-const stages = [
-  {
-    id: "confirmed",
-    en: "Order confirmed",
-    hi: "ऑर्डर की पुष्टि",
-    detail: [
-      "Your bundle and business checks are complete.",
-      "आपका बंडल और व्यवसाय जाँच पूरी हो गई है।",
-    ],
-  },
-  {
-    id: "scheduled",
-    en: "Installation scheduled",
-    hi: "इंस्टॉलेशन तय",
-    detail: [
-      "Your services are queued for installation.",
-      "सेवाओं के इंस्टॉलेशन की तैयारी है।",
-    ],
-  },
-  {
-    id: "installing",
-    en: "Installation in progress",
-    hi: "इंस्टॉलेशन जारी",
-    detail: [
-      "Your connection and services are being set up.",
-      "कनेक्शन और सेवाएं सेट की जा रही हैं।",
-    ],
-  },
-  {
-    id: "activated",
-    en: "You’re connected",
-    hi: "आपकी सेवाएं सक्रिय हैं",
-    detail: [
-      "Your shop is ready to use its new services.",
-      "दुकान नई सेवाएं इस्तेमाल करने के लिए तैयार है।",
-    ],
-  },
-];
 export default function Tracker() {
   const { orderId } = useLocalSearchParams<{ orderId: string }>();
-  const { api, t, language, base } = useApp();
-  const theme = useTheme();
-  const refresh = useRefresh();
-  const journey = useJourney();
-  const query = useQuery({
-    queryKey: ["order", base, orderId],
-    queryFn: () => api.request<Order>(`/orders/${orderId}`),
-    enabled: Boolean(journey.data),
-    refetchInterval: (q) =>
-      q.state.data?.status === "activated" ? false : 5000,
-  });
-  const advance = useMutation({
-    mutationFn: (delay: boolean) =>
-      api.request(`/demo/orders/${orderId}/advance`, "POST", {
-        expectedStatus: query.data!.status,
-        delay,
-      }),
-    onSuccess: async () => {
-      await query.refetch();
-      await refresh();
-    },
-  });
-  const order = query.data;
-  const stage = stages.findIndex((s) => s.id === order?.status);
+  const { t, api } = useApp();
+  const q = useResource<Order>(`/orders/${orderId}`);
+  const home = useResource<CustomerHome>("/customer/home");
+  const [error, setError] = useState<unknown>();
+  const order = q.data;
   return (
     <Shell step={5}>
+      <Title
+        title={
+          order?.status === "activated"
+            ? t("Demo activation complete", "डेमो सक्रियण पूरा")
+            : t(
+                "Your installation, step by step.",
+                "आपका इंस्टॉलेशन, हर चरण पर।",
+              )
+        }
+        subtitle={t(
+          "Simulated installation · updates are managed by the assigned staff team.",
+          "डेमो इंस्टॉलेशन · नियुक्त स्टाफ टीम अपडेट करती है।",
+        )}
+      />
+      <ErrorNotice
+        error={q.error || home.error || error}
+        retry={() => void q.refetch()}
+      />
       {!order ? (
-        <>
-          <Loading />
-          <ErrorNotice
-            error={query.error || journey.error}
-            retry={() => void query.refetch()}
-          />
-        </>
+        <Loading />
       ) : (
-        <>
-          <Title
-            eyebrow={t("06 / YOUR ORDER", "06 / आपका ऑर्डर")}
-            title={
-              order.status === "activated"
-                ? t("Your shop is ready.", "आपकी दुकान तैयार है।")
-                : t("You’re on your way.", "आपकी डिजिटल यात्रा शुरू हो गई।")
-            }
-            subtitle={t(
-              "Follow every step of your installation, right here.",
-              "अपने इंस्टॉलेशन के हर चरण की जानकारी यहाँ देखें।",
-            )}
-          />
-          <Columns
-            aside={
+        <Columns aside={<BundleSummary quote={order.quote} />}>
+          <Panel>
+            <Badge text={stateLabel(order.status, t)} />
+            <Text selectable>
+              {t("Order reference", "ऑर्डर संदर्भ")}: {order.id}
+            </Text>
+            <Text>
+              {t("Next step", "अगला कदम")}:{" "}
+              {order.status === "confirmed"
+                ? t(
+                    "Operations will assign and schedule installation.",
+                    "ऑपरेशंस इंस्टॉलेशन की नियुक्ति और समय तय करेगा।",
+                  )
+                : order.status === "scheduled"
+                  ? t(
+                      "Wait for the fictional technician during the scheduled window.",
+                      "तय अवधि में काल्पनिक तकनीशियन की प्रतीक्षा करें।",
+                    )
+                  : order.status === "installing"
+                    ? t(
+                        "The assigned team is completing simulated setup.",
+                        "नियुक्त टीम डेमो सेटअप पूरा कर रही है।",
+                      )
+                    : t(
+                        "View your services, sample statement and support.",
+                        "सेवाएं, नमूना बिल और सहायता देखें।",
+                      )}
+            </Text>
+            {home.data?.installation?.start && (
               <>
-                <BundleSummary quote={order.quote} />
-                <Panel>
-                  <Text variant="titleMedium">
-                    {t("Installation estimates", "अनुमानित इंस्टॉलेशन")}
-                  </Text>
-                  {order.estimates.map((e) => (
-                    <View key={e.productId} style={{ gap: 5 }}>
-                      <Text style={{ fontSize: 13 }}>
-                        {language === "hi"
-                          ? productCopy[e.productId]?.hi
-                          : order.quote.lines.find(
-                              (l) => l.product.id === e.productId,
-                            )?.product.name}
-                      </Text>
-                      <Text style={{ color: theme.colors.onSurfaceVariant }}>
-                        {new Date(e.date).toLocaleDateString(
-                          language === "hi" ? "hi-IN" : "en-IN",
-                          { day: "numeric", month: "short", year: "numeric" },
-                        )}
-                      </Text>
-                    </View>
-                  ))}
-                </Panel>
+                <Text>
+                  {t("Installation window", "इंस्टॉलेशन अवधि")}:{" "}
+                  {new Date(home.data.installation.start).toLocaleString()} —{" "}
+                  {new Date(home.data.installation.end!).toLocaleString()}
+                </Text>
+                <Text>
+                  {t("Fictional team", "काल्पनिक टीम")}:{" "}
+                  {home.data.installation.team}
+                </Text>
               </>
-            }
-          >
-            <Panel>
-              <Row
-                style={{ justifyContent: "space-between", flexWrap: "wrap" }}
-              >
-                <Text variant="titleMedium">
-                  {journey.data?.profile?.businessName}
-                </Text>
-                <Badge
-                  icon="receipt-text-check-outline"
-                  text={`UD-${order.id.slice(0, 8).toUpperCase()}`}
-                />
-              </Row>
-              <Divider />
-              {stages.map((s, index) => (
-                <Row key={s.id} style={{ alignItems: "flex-start", gap: 20 }}>
-                  <View style={{ alignItems: "center", width: 42 }}>
-                    <View
-                      style={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: 20,
-                        alignItems: "center",
-                        justifyContent: "center",
-                        backgroundColor:
-                          index <= stage
-                            ? theme.colors.primaryContainer
-                            : theme.colors.surfaceVariant,
-                      }}
-                    >
-                      <Icon
-                        source={
-                          index < stage || stage === 3
-                            ? "check"
-                            : index === stage
-                              ? "circle-slice-8"
-                              : "circle-outline"
-                        }
-                        size={22}
-                        color={
-                          index <= stage
-                            ? theme.colors.onPrimaryContainer
-                            : theme.colors.onSurfaceVariant
-                        }
-                      />
-                    </View>
-                    {index < 3 && (
-                      <View
-                        style={{
-                          width: 2,
-                          height: 55,
-                          backgroundColor: theme.colors.outlineVariant,
-                          marginTop: 6,
-                        }}
-                      />
-                    )}
-                  </View>
-                  <View style={{ flex: 1, paddingTop: 6, gap: 7 }}>
-                    <Text
-                      variant="titleMedium"
-                      style={{
-                        color:
-                          index <= stage
-                            ? theme.colors.onSurface
-                            : theme.colors.onSurfaceVariant,
-                      }}
-                    >
-                      {t(s.en, s.hi)}
-                    </Text>
-                    <Text
-                      style={{
-                        lineHeight: 24,
-                        color: theme.colors.onSurfaceVariant,
-                      }}
-                    >
-                      {t(s.detail[0], s.detail[1])}
-                    </Text>
-                    {index === stage && (
-                      <Text
-                        style={{
-                          fontSize: 11,
-                          color: theme.colors.onPrimaryContainer,
-                        }}
-                      >
-                        {t("CURRENT STEP", "मौजूदा चरण")}
-                      </Text>
-                    )}
-                  </View>
-                </Row>
-              ))}
-            </Panel>
-            <Panel>
-              <Row>
-                <Icon
-                  source="flask-outline"
-                  size={22}
-                  color={theme.colors.onPrimaryContainer}
-                />
-                <Text variant="titleMedium">
-                  {t("Installation simulation", "इंस्टॉलेशन अनुकरण")}
-                </Text>
-              </Row>
-              <Text
-                style={{ lineHeight: 24, color: theme.colors.onSurfaceVariant }}
-              >
-                {t(
-                  "Demo controls move this fictional order through installation. No real telecom service is activated.",
-                  "डेमो नियंत्रण इस काल्पनिक ऑर्डर को इंस्टॉलेशन चरणों में आगे बढ़ाते हैं। वास्तविक दूरसंचार सेवा सक्रिय नहीं होती।",
-                )}
+            )}
+            {home.data?.installation?.delayReason && (
+              <Text>
+                {t("Delay explanation", "देरी का कारण")}:{" "}
+                {home.data.installation.delayReason}
               </Text>
-              <Row style={{ flexWrap: "wrap" }}>
-                <Action
-                  loading={advance.isPending}
-                  disabled={order.status === "activated"}
-                  icon="arrow-right"
-                  onPress={() => advance.mutate(false)}
-                >
-                  {t("Advance demo stage", "अगला डेमो चरण")}
-                </Action>
-                <Action
-                  mode="outlined"
-                  disabled={order.status === "activated" || advance.isPending}
-                  onPress={() => advance.mutate(true)}
-                >
-                  {t("Simulate 1-day delay", "1 दिन की देरी दिखाएं")}
-                </Action>
-              </Row>
-              <ErrorNotice error={advance.error} />
-            </Panel>
-            <Panel>
-              <Text variant="titleMedium">
-                {t("Status history", "स्थिति इतिहास")}
+            )}
+            {order.status === "activated" && (
+              <Action onPress={() => router.replace("/home")}>
+                {t("View your services", "अपनी सेवाएं देखें")}
+              </Action>
+            )}
+            <Action
+              mode="outlined"
+              onPress={() =>
+                void downloadCsv(
+                  api,
+                  `/orders/${order.id}/summary`,
+                  "Udyam-order-summary.csv",
+                ).catch(setError)
+              }
+            >
+              {t("Download order summary", "ऑर्डर सारांश डाउनलोड")}
+            </Action>
+            <Action mode="outlined" onPress={() => router.push("/support")}>
+              {t("Get support", "सहायता लें")}
+            </Action>
+          </Panel>
+          <Panel>
+            <Text variant="titleLarge">
+              {t("Status history", "स्थिति इतिहास")}
+            </Text>
+            {order.events.map((e) => (
+              <View key={e.id} style={{ gap: 6 }}>
+                <Text>
+                  {e.type === "delay"
+                    ? t("Delay reported", "देरी दर्ज")
+                    : stateLabel(e.status, t)}
+                </Text>
+                <Text>{new Date(e.createdAt).toLocaleString()}</Text>
+              </View>
+            ))}
+          </Panel>
+          <Panel>
+            <Text variant="titleMedium">
+              {t("Installation estimates", "इंस्टॉलेशन अनुमान")}
+            </Text>
+            {order.estimates.map((e) => (
+              <Text key={e.productId}>
+                {
+                  order.quote.lines.find((l) => l.product.id === e.productId)
+                    ?.product.name
+                }{" "}
+                · {new Date(e.date).toLocaleDateString()}
               </Text>
-              {[...order.events].reverse().map((event) => (
-                <Row
-                  key={event.id}
-                  style={{ justifyContent: "space-between", flexWrap: "wrap" }}
-                >
-                  <Text style={{ flex: 1 }}>
-                    {event.type === "delay"
-                      ? t(
-                          "Installation estimate moved by one day",
-                          "इंस्टॉलेशन का अनुमान एक दिन आगे बढ़ा",
-                        )
-                      : t(
-                          stages.find((s) => s.id === event.status)!.en,
-                          stages.find((s) => s.id === event.status)!.hi,
-                        )}
-                  </Text>
-                  <Text
-                    style={{
-                      color: theme.colors.onSurfaceVariant,
-                      fontSize: 12,
-                    }}
-                  >
-                    {new Date(event.createdAt).toLocaleTimeString(
-                      language === "hi" ? "hi-IN" : "en-IN",
-                      { hour: "2-digit", minute: "2-digit" },
-                    )}
-                  </Text>
-                </Row>
-              ))}
-            </Panel>
-          </Columns>
-        </>
+            ))}
+            <Text>
+              {t(
+                "Catalogue estimates; no real service has been provisioned.",
+                "कैटलॉग अनुमान; कोई वास्तविक सेवा चालू नहीं हुई है।",
+              )}
+            </Text>
+          </Panel>
+        </Columns>
       )}
     </Shell>
   );

@@ -26,9 +26,17 @@ export function JourneyGate({
     );
   const journey = query.data;
   if (journey.order && stage > 0)
-    return <Redirect href={`/orders/${journey.order.id}`} />;
+    return (
+      <Redirect
+        href={
+          journey.order.status === "activated"
+            ? "/home"
+            : `/orders/${journey.order.id}`
+        }
+      />
+    );
   if (stage > 0 && !journey.profile) return <Redirect href="/business" />;
-  if (stage >= 2 && journey.advisorStep < 6)
+  if (stage >= 2 && !journey.advisorState?.ready && journey.advisorStep < 6)
     return <Redirect href="/advisor" />;
   if (stage >= 3 && !journey.quote) return <Redirect href="/bundle" />;
   if (stage >= 4 && !journey.quote?.acceptedAt)

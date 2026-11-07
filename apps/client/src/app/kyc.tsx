@@ -1,4 +1,5 @@
 import { CheckControl } from "../components/check-control";
+import { HelpPanel } from "../components/help-panel";
 import { useRef, useState } from "react";
 import { Platform, View } from "react-native";
 import {
@@ -57,6 +58,18 @@ function Verification({ journey }: { journey: Journey }) {
   const theme = useTheme();
   const refresh = useRefresh();
   const [agreed, setAgreed] = useState(false);
+  const [identity, setIdentity] = useState({
+    signatoryName: journey.profile!.signatoryName,
+    address: journey.profile!.address,
+  });
+  const saveIdentity = useMutation({
+    mutationFn: () =>
+      api.request("/profile", "PATCH", {
+        profile: { ...journey.profile, ...identity },
+        revision: journey.revision,
+      }),
+    onSuccess: () => refresh(),
+  });
   const [registration, setRegistration] = useState<"gst" | "udyam">(
     journey.profile!.hasGstin ? "gst" : "udyam",
   );
@@ -201,7 +214,47 @@ function Verification({ journey }: { journey: Journey }) {
           </>
         }
       >
-        {!journey.consent ? (
+        {!journey.profile!.signatoryName || !journey.profile!.address ? (
+          <Panel>
+            <Text variant="titleLarge">
+              {t("Identity for verification", "सत्यापन की पहचान")}
+            </Text>
+            <TextInput
+              accessibilityLabel={t(
+                "Owner / authorized signatory",
+                "मालिक / अधिकृत हस्ताक्षरकर्ता",
+              )}
+              mode="outlined"
+              label={t(
+                "Owner / authorized signatory",
+                "मालिक / अधिकृत हस्ताक्षरकर्ता",
+              )}
+              value={identity.signatoryName}
+              onChangeText={(v) =>
+                setIdentity((p) => ({ ...p, signatoryName: v }))
+              }
+            />
+            <TextInput
+              accessibilityLabel={t("Full shop address", "दुकान का पूरा पता")}
+              mode="outlined"
+              multiline
+              label={t("Full shop address", "दुकान का पूरा पता")}
+              value={identity.address}
+              onChangeText={(v) => setIdentity((p) => ({ ...p, address: v }))}
+            />
+            <ErrorNotice error={saveIdentity.error} />
+            <Action
+              loading={saveIdentity.isPending}
+              disabled={
+                identity.signatoryName.trim().length < 2 ||
+                identity.address.trim().length < 8
+              }
+              onPress={() => saveIdentity.mutate()}
+            >
+              {t("Save identity", "पहचान सेव करें")}
+            </Action>
+          </Panel>
+        ) : !journey.consent ? (
           <Panel>
             <Text variant="titleLarge">
               {t("Your consent comes first", "पहले आपकी सहमति")}
@@ -448,6 +501,7 @@ function Verification({ journey }: { journey: Journey }) {
             </Action>
           </>
         )}
+        <HelpPanel stage="kyc" />
       </Columns>
       <Portal>
         <Dialog
@@ -468,6 +522,9 @@ function Verification({ journey }: { journey: Journey }) {
               </Text>
               {Object.entries(fields).map(([key, value]) => (
                 <TextInput
+                  accessibilityLabel={
+                    fieldLabels[key] ? t(...fieldLabels[key]) : key
+                  }
                   key={key}
                   mode="outlined"
                   label={fieldLabels[key] ? t(...fieldLabels[key]) : key}

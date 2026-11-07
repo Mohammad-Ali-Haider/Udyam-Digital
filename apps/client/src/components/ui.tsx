@@ -62,7 +62,7 @@ export function Title({
         <Text
           style={{
             color: theme.colors.onSurfaceVariant,
-            fontSize: 15,
+            fontSize: 16,
             lineHeight: 25,
             maxWidth: 650,
           }}
@@ -271,15 +271,30 @@ const steps = [
 export function Shell({
   children,
   step,
+  staff = false,
 }: {
   children: React.ReactNode;
   step?: number;
+  staff?: boolean;
 }) {
   const { t, language, setLanguage } = useApp();
   const theme = useTheme();
   const { width } = useWindowDimensions();
   const pathname = usePathname();
-  const journey = useJourney();
+  const journey = useJourney(!staff);
+  const active = journey.data?.order?.status === "activated";
+  const nav = staff
+    ? [
+        {
+          path: "/staff",
+          en: "Partner workspace",
+          hi: "पार्टनर कार्यस्थल",
+          icon: "account-group-outline",
+        },
+      ]
+    : active
+      ? serviceNav
+      : steps;
   const desktop = width >= 1024;
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
@@ -311,7 +326,7 @@ export function Shell({
                 >
                   {t("YOUR DIGITAL JOURNEY", "आपकी डिजिटल यात्रा")}
                 </Text>
-                {steps.map((item, index) => (
+                {nav.map((item, index) => (
                   <Button
                     key={item.path}
                     icon={item.icon}
@@ -322,9 +337,11 @@ export function Shell({
                         : theme.colors.onSurfaceVariant
                     }
                     disabled={
-                      (index > 0 && !journey.data?.profile) ||
-                      (index > 2 && !journey.data?.quote) ||
-                      (index === 4 && !journey.data?.quote?.acceptedAt)
+                      !staff &&
+                      !active &&
+                      ((index > 0 && !journey.data?.profile) ||
+                        (index > 2 && !journey.data?.quote) ||
+                        (index === 4 && !journey.data?.quote?.acceptedAt))
                     }
                     contentStyle={{ justifyContent: "flex-start", height: 50 }}
                     style={{ borderRadius: 12 }}
@@ -356,7 +373,9 @@ export function Shell({
                 />
                 <Button
                   icon="cog-outline"
-                  onPress={() => router.push("/settings")}
+                  onPress={() =>
+                    router.push(staff ? "/staff/preferences" : "/settings")
+                  }
                 >
                   {t("Settings", "सेटिंग्स")}
                 </Button>
@@ -397,7 +416,9 @@ export function Shell({
                 <Button
                   compact
                   icon="cog-outline"
-                  onPress={() => router.push("/settings")}
+                  onPress={() =>
+                    router.push(staff ? "/staff/preferences" : "/settings")
+                  }
                   accessibilityLabel={t("Settings", "सेटिंग्स")}
                 >
                   {desktop ? t("Preferences", "पसंद") : ""}
@@ -442,12 +463,54 @@ export function Shell({
                 {children}
               </View>
             </ScrollView>
+            {!desktop && active && (
+              <Row
+                style={{
+                  borderTopWidth: 1,
+                  borderColor: theme.colors.outlineVariant,
+                  gap: 0,
+                }}
+              >
+                {serviceNav.map((item) => (
+                  <Button
+                    key={item.path}
+                    compact
+                    icon={({ color }) => (
+                      <Icon source={item.icon} size={20} color={color} />
+                    )}
+                    textColor={
+                      pathname === item.path
+                        ? theme.colors.onPrimaryContainer
+                        : theme.colors.onSurfaceVariant
+                    }
+                    style={{ flex: 1, borderRadius: 0 }}
+                    contentStyle={{ minHeight: 56, flexDirection: "column" }}
+                    labelStyle={{ fontSize: 12, marginHorizontal: 1 }}
+                    mode={pathname === item.path ? "contained-tonal" : "text"}
+                    onPress={() => router.navigate(item.path as any)}
+                  >
+                    {t(item.en, item.hi)}
+                  </Button>
+                ))}
+              </Row>
+            )}
           </View>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
+const serviceNav = [
+  { path: "/home", en: "Home", hi: "होम", icon: "home-outline" },
+  {
+    path: "/services",
+    en: "Services",
+    hi: "सेवाएं",
+    icon: "view-grid-outline",
+  },
+  { path: "/bills", en: "Bills", hi: "बिल", icon: "receipt-text-outline" },
+  { path: "/support", en: "Support", hi: "सहायता", icon: "message-outline" },
+];
 function Brand({ compact = false }: { compact?: boolean }) {
   const theme = useTheme();
   return (

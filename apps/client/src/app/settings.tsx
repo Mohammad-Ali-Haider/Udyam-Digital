@@ -99,6 +99,7 @@ export default function Settings() {
               )}
             </Text>
             <TextInput
+              accessibilityLabel={t("Backend URL", "बैकएंड URL")}
               mode="outlined"
               label={t("Backend URL", "बैकएंड URL")}
               value={url}

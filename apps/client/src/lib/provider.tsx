@@ -174,12 +174,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   );
 }
 export const useApp = () => useContext(Context);
-export function useJourney() {
+export function useJourney(enabled = true) {
   const { api, base, ready } = useApp();
   return useQuery({
     queryKey: ["journey", base],
     queryFn: () => api.restore(),
-    enabled: ready,
+    enabled: ready && enabled,
   });
 }
 export function useRefresh() {
@@ -189,9 +189,12 @@ export function useRefresh() {
 }
 export function nextRoute(journey?: Journey) {
   if (!journey?.profile) return "/business";
-  if (journey.order) return `/orders/${journey.order.id}`;
+  if (journey.order)
+    return journey.order.status === "activated"
+      ? "/home"
+      : `/orders/${journey.order.id}`;
   if (journey.quote?.acceptedAt) return "/kyc";
   if (journey.quote) return "/checkout";
-  if (journey.advisorStep >= 6) return "/bundle";
+  if (journey.advisorState?.ready || journey.advisorStep >= 6) return "/bundle";
   return "/advisor";
 }

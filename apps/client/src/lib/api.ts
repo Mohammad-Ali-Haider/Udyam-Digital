@@ -1,6 +1,6 @@
 import { Platform } from "react-native";
 import type { ApiError, Journey } from "@udyam/shared";
-import { tokens } from "./storage";
+import { tokens, storage } from "./storage";
 
 export class RequestError extends Error {
   constructor(
@@ -60,7 +60,9 @@ export class Api {
         0,
       );
     }
-    const data = await response.json();
+    const data = response.headers.get("content-type")?.includes("text/csv")
+      ? await response.text()
+      : await response.json();
     if (!response.ok) throw new RequestError(data, response.status);
     return data;
   }
@@ -73,6 +75,7 @@ export class Api {
         } catch (error) {
           if (!(error instanceof RequestError) || error.status !== 401)
             throw error;
+          await storage.removePrefix(`udyam.messageDraft.${this.base}.`);
           const session = await this.request<{ token?: string }>(
             "/sessions",
             "POST",
@@ -96,6 +99,7 @@ export class Api {
     await this.request("/session", "DELETE");
     if (Platform.OS !== "web") await tokens.remove(this.base);
     this.token = null;
+    await storage.removePrefix(`udyam.messageDraft.${this.base}.`);
   }
 }
 export const requestId = () =>
