@@ -59,6 +59,7 @@ export default function Staff() {
       api.request("/staff/auth/login", "POST", { username, password }),
     onSuccess: async () => {
       setPassword("");
+      client.removeQueries({ queryKey: ["resource"] });
       await me.refetch();
     },
   });

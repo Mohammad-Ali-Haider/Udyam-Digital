@@ -291,6 +291,19 @@ try {
   await expect(
     staff.getByRole("textbox", { name: "यूज़रनेम", exact: true }),
   ).toBeVisible({ timeout: 20000 });
+  await staff
+    .getByRole("textbox", { name: "यूज़रनेम", exact: true })
+    .fill("partner-b");
+  await staff
+    .getByRole("textbox", { name: "पासवर्ड", exact: true })
+    .fill("verification-partner-b-only");
+  await click(staff, "लॉगिन");
+  await expect(
+    staff.getByText("partner-b · पार्टनर", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    staff.getByText("Shree General Store", { exact: true }),
+  ).toHaveCount(0);
   await page.route("**/api/v1/**", (r) => r.abort());
   await page.reload();
   await expect(page.getByRole("alert").first()).toBeVisible({ timeout: 20000 });
