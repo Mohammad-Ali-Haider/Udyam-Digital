@@ -17,7 +17,8 @@
     "seed": "npm run seed -w @udyam/server",
     "ocr:prepare": "node scripts/prepare-ocr.mjs",
     "android:apk": "powershell -ExecutionPolicy Bypass -File scripts/build-android.ps1",
-    "test:web": "node scripts/verify-web.mjs"
+    "test:web": "node scripts/verify-web.mjs",
+    "test:live-ai": "tsx scripts/verify-live-ai.mts"
   },
   "devDependencies": {
     "@playwright/test": "^1.65.0",

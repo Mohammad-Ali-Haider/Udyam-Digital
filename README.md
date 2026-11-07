@@ -121,6 +121,14 @@ The key stays on the backend. Do not put it in `apps/client/.env` or an `EXPO_PU
 
 Without a key, or if the provider times out or returns an invalid response, the backend uses the labelled **Demo advisor**. If the client cannot reach the backend itself, it shows a retry state instead. A configured key or a passing fallback test does not prove that a live provider call succeeded; verify a live advisor response separately.
 
+To make an explicit real-provider check from the repository root:
+
+```powershell
+npm run test:live-ai
+```
+
+This sends one synthetic advisor request to OpenRouter, so it requires internet access and may use provider credits. It uses an isolated in-memory database, checks persisted `live` mode, verifies server-calculated prices, and confirms rejection of unknown products, ineligible products and missing dependencies. It prints only safe verification metadata, never the key or provider response body. An empty key, provider failure or invalid response reports a blocker instead of a live success. `npm test` separately verifies deterministic and mocked-provider behavior without requiring live access.
+
 ## Build and install the Android APK
 
 The APK is generated locally and ignored by Git. A fresh clone does not contain it. You can use a separately supplied demo APK, or build one on Windows:
