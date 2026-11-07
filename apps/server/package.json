@@ -1,0 +1,6 @@
+{
+  "name":"@udyam/server","version":"1.0.0","private":true,"type":"module",
+  "scripts":{"dev":"tsx watch src/index.ts","start":"node dist/index.js","build":"esbuild src/index.ts --bundle --platform=node --format=esm --packages=external --outfile=dist/index.js","check":"tsc --noEmit","test":"tsx --test tests/*.test.ts","seed":"tsx src/seed.ts"},
+  "dependencies":{"@udyam/shared":"*","fastify":"^5.6.2","@fastify/cookie":"^11.0.2","@fastify/cors":"^11.1.0","@fastify/multipart":"^9.3.0","@fastify/static":"^8.3.0","better-sqlite3":"^12.4.1","drizzle-orm":"^0.45.2","csv-parse":"^6.1.0","dotenv":"^17.2.3","sharp":"^0.34.5","tesseract.js":"^6.0.1","zod":"^3.25.76"},
+  "devDependencies":{"@types/better-sqlite3":"^7.6.13","esbuild":"^0.27.0"}
+}

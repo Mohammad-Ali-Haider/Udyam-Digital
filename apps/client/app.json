@@ -1,0 +1,50 @@
+{
+  "expo": {
+    "name": "Udyam Digital",
+    "slug": "udyam-digital",
+    "version": "1.0.0",
+    "scheme": "udyam",
+    "userInterfaceStyle": "automatic",
+    "android": {
+      "package": "com.udyamdigital.prototype",
+      "predictiveBackGestureEnabled": true
+    },
+    "web": {
+      "output": "single",
+      "bundler": "metro",
+      "name": "Udyam Digital"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Photograph a business document for verification.",
+          "microphonePermission": false
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#101114"
+        }
+      ],
+      "./plugins/with-demo-signing.cjs"
+    ],
+    "updates": {
+      "enabled": false
+    },
+    "experiments": {
+      "typedRoutes": false
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "udyam-digital",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "dev": "concurrently -k -n api,expo \"npm run dev -w @udyam/server\" \"npm run start -w @udyam/client\"",
+    "dev:server": "npm run dev -w @udyam/server",
+    "dev:web": "npm run web -w @udyam/client",
+    "check": "npm run check --workspaces --if-present",
+    "test": "npm run test -w @udyam/server",
+    "build": "npm run build -w @udyam/server && npm run build:web -w @udyam/client",
+    "start": "npm run start -w @udyam/server",
+    "seed": "npm run seed -w @udyam/server",
+    "ocr:prepare": "node scripts/prepare-ocr.mjs",
+    "android:apk": "powershell -ExecutionPolicy Bypass -File scripts/build-android.ps1"
+  },
+  "devDependencies": {"concurrently": "^9.2.1", "typescript": "~6.0.3", "tsx": "^4.20.6", "@types/node": "^24.10.0"}
+}
