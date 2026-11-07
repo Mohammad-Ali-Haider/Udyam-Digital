@@ -15,7 +15,7 @@ const documents={
 const escape=value=>value.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
 for (const [kind,lines] of Object.entries(documents)) {
   const rows=lines.flatMap(line=>line.length>67?[line.slice(0,line.lastIndexOf(' ',67)),line.slice(line.lastIndexOf(' ',67)+1)]:[line]);
-  const body=rows.map((line,index)=>`<text x="70" y="${190+index*74}" font-family="Arial" font-size="${index===0?34:29}" font-weight="${index===0?'bold':'normal'}">${escape(line)}</text>`).join('');
+  const body=rows.map((line,index)=>`<text x="70" y="${190+index*74}" font-family="${/GSTIN:|Udyam number:/.test(line)?'Consolas':'Arial'}" font-size="${/GSTIN:|Udyam number:/.test(line)?38:index===0?34:29}" font-weight="${index===0?'bold':'normal'}">${escape(line)}</text>`).join('');
   const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1050"><rect width="1400" height="1050" fill="white"/><rect x="30" y="30" width="1340" height="990" fill="none" stroke="#333" stroke-width="2"/><text x="70" y="90" font-family="Arial" font-size="26" fill="#a21b2b">SYNTHETIC DEMO DOCUMENT - NOT VALID FOR OFFICIAL USE</text>${body}<text x="70" y="940" font-family="Arial" font-size="22">Generated kirana demonstration fixture from the supplied fictional registry.</text></svg>`;
   await sharp(Buffer.from(svg)).png().toFile(fileURLToPath(new URL(`demo-${kind}.png`,directory)));
 }
