@@ -1,6 +1,6 @@
 # Udyam Digital
 
-A kirana-store onboarding prototype for Android and responsive web. It covers language selection, business profile, an AI advisor, bundle recommendations, editable quotes, demo checkout, consent and document verification, order confirmation, and simulated installation tracking.
+A kirana-store prototype for Android and responsive web. It connects an adaptive advisor, editable quotes, consent and document verification to partner assistance, staff-managed installation, activated services, sample statements and support tickets. External registries and telecom activation remain simulated.
 
 The interface supports English and Hindi, with Dark, Light, and System themes. Both clients use the same local backend.
 
@@ -21,7 +21,7 @@ Run the commands below from the repository root, where `package.json` is located
 ### 1. Clone and install
 
 ```sh
-git clone https://github.com/Mohammad-Ali-Haider/Udyam-Digital.git
+git clone --branch codex/kirana-service-experience https://github.com/Mohammad-Ali-Haider/Udyam-Digital.git
 cd Udyam-Digital
 npm ci
 ```
@@ -58,12 +58,16 @@ DEMO_CONTROLS=true
 ```sh
 npm run ocr:prepare
 npm run seed
+npm run staff:setup
+npm run demo:fixtures
 npm run build
 npm start
 ```
 
 - `ocr:prepare` downloads the English OCR language file into `.runtime/ocr`. Repeat runs reuse the existing file.
 - `seed` initializes the SQLite schema and checks the supplied catalogue and mock registries. Startup also applies the schema automatically.
+- `staff:setup` generates three distinct local passwords, preserves existing configured passwords, and writes a private `.runtime/demo-staff-access.txt` file. Do not commit or publish it. Restart the backend after changing passwords.
+- `demo:fixtures` optionally adds eight labelled synthetic scenarios without overwriting ordinary journeys. Fixtures demonstrate queues; they are not evidence of live AI or OCR execution.
 - `build` compiles the backend and exports the website.
 - `start` serves the compiled backend and exported website from the same process.
 
@@ -188,21 +192,46 @@ If you open the Expo development website from another device, add its exact web 
 ## Suggested demo walkthrough
 
 1. Choose English or Hindi, then select **Use sample kirana** on the business-profile screen.
-2. Answer the advisor's questions and review the recommended bundle.
-3. Edit quantities or products, review the server-calculated quote, and accept demo checkout. No payment details are collected.
-4. Give KYC consent. Use the synthetic samples, or upload the matching JPEG/PNG fixtures from [`apps/server/tests/fixtures`](apps/server/tests/fixtures).
-5. Try the expired address sample to see a correction flow, then replace it with the valid address sample. Use the matching registration and signatory samples as well.
-6. Confirm the order, refresh the page to check saved progress, and use the labelled demo controls to advance installation through activation.
+2. Answer the advisor's questions, try **Make it cheaper**, and review the essential/recommended alternatives.
+3. Use **Get help from a partner**, review the sharing notice and opt in. An optional separate permission allows follow-up after ten minutes without progress. Assistance is in-app only.
+4. Open **http://localhost:3001/staff** in another browser/tab. Sign in as `operations`, assign the assistance case to `partner-a`, then sign in as that partner to reply. The customer receives the message automatically.
+5. Edit quantities or products, review the server-calculated quote, and accept demo checkout. No payment details are collected.
+6. Give KYC consent. Use the synthetic samples, or upload the matching JPEG/PNG fixtures from [`apps/server/tests/fixtures`](apps/server/tests/fixtures).
+7. Try the expired address sample to see a correction flow, then replace it with the valid address sample. Use the matching registration and signatory samples as well.
+8. Confirm the customer order. In the staff **Installation** queue, open the order, assign a partner if needed, schedule a future window and fictional team, start installation and complete simulated activation. A delay requires a reason and moves estimates one day. Customers cannot advance installation themselves.
+9. The customer opens **Home / Services / Bills / Support**. For P01 plus one P19, the initial sample statement is ₹1,598 monthly + ₹2,500 one-time setup = ₹4,098 excluding taxes. It is not a tax invoice. Download CSV or print from the website; no payment is collected.
+10. Create a support ticket. Operations can assign it; staff reply and resolve with a message. The customer can reply or reopen it. Refresh both views to verify persisted state.
 
-Keep `DEMO_CONTROLS=true` for this walkthrough. Use **Settings → Reset this journey** to delete the current session's demo data and start again.
+Keep `DEMO_CONTROLS=true` for synthetic document shortcuts. Use **Settings → Reset this journey** to delete the current session, including its assistance, services, statements and tickets. Other customer journeys remain independent.
+
+## Staff access and operations
+
+The staff portal is web-only and works on desktop, tablet and phone browsers. The APK remains customer-focused. Open `/staff` directly; it does not create a customer session. Customer and staff cookies are independent even in the same browser.
+
+| Username | Role | Scope |
+| --- | --- | --- |
+| `operations` | Operations | All eligible queues; assignments, installations and tickets |
+| `partner-a` | Partner | Only records currently assigned to this account |
+| `partner-b` | Partner | Only records currently assigned to this account |
+
+Passwords come from `STAFF_OPERATIONS_PASSWORD`, `STAFF_PARTNER_A_PASSWORD`, and `STAFF_PARTNER_B_PASSWORD` in `apps/server/.env`, with at least 12 characters each. SQLite stores salted password hashes; staff cookies expire after eight hours. Login is throttled and mutations validate the browser origin. There is no default public password. `npm run staff:setup` creates local credentials automatically.
+
+Only opted-in pre-order journeys appear in assistance queues. Private notes never appear in customer responses. Staff can request replacement evidence or profile corrections, but cannot force KYC approval or retrieve discarded original images. Follow-up priority is a disclosed rule-based score, not an AI conversion prediction.
+
+## Upgrading and rollback
+
+Stop the backend before replacing a build. Startup applies ordered migrations and creates an ignored `.runtime/udyam.sqlite.before-v*-backup` before changing an existing database. Existing quotes and order prices are preserved. Activated legacy orders receive services and exactly one initial sample statement.
+
+The expanded UI requires the **v1.1 APK (version code 2)** and matching backend/web build. The old APK does not acquire new screens automatically. Keep the same ignored signing key to install the update without uninstalling. The previous APK and website are preserved locally under `artifacts/rollback/`. To roll back a database, stop the server and restore the matching pre-migration backup together with the matching old backend; do not combine an old server with a newer database.
 
 ## Data, scope and verification
 
 - The supplied catalogue and GSTIN/Udyam registries are synthetic. Registry lookups and serviceability are mocked; installation is explicitly simulated.
 - KYC date checks use **15 July 2026**, not today's date. Address proofs must be no more than 90 days old and cannot be future-dated relative to that reference date. The synthetic GSTIN PAN `X` and Udyam district `00` conventions are supported.
 - The prepared OCR language is English, matching the demo fixtures. Hindi interface support does not imply Hindi document OCR support.
+- The supplied K01 cancelled registration and K03 matching/mismatched address cases are exercised with real OCR. K05 has a documented recognition limitation: Tesseract reads `Z` as `7`, so it requests replacement even for the matching profile. The independent semantic expectations and observed limitation are recorded in `apps/server/tests/fixtures/supplied-expectations.json`; the system does not alter an identifier to force approval. Use the matching `demo-*` fixtures for the successful walkthrough.
 - SQLite data persists in `.runtime/udyam.sqlite`. Sessions expire after seven days of inactivity. Cross-device continuation and accounts are outside this prototype.
-- Automated server tests and browser journeys have been verified, along with the release APK's signature and embedded bundle. Physical-phone behaviour and a live OpenRouter call still need separate verification with device access and a working key.
+- Automated server tests, the connected browser journey and a separate real OpenRouter request have been verified. Physical Android installation, camera/file permissions, keyboard/back handling and device-level download behavior remain for the team to test. Build/signature checks do not substitute for that phone test.
 
 ## Checks
 
@@ -214,13 +243,13 @@ npm test
 
 Prepare OCR assets before running tests. For repeatable fallback tests, use a demo setup with `OPENROUTER_API_KEY` left blank.
 
-For browser end-to-end checks, first run `npm run build` and leave `npm start` running in another terminal. The script uses an installed Microsoft Edge browser:
+For browser end-to-end checks, first run `npm run build`, then leave `npm run test:server` running in another terminal. This isolated in-memory backend uses verification-only staff credentials and the deterministic advisor. It never changes the ordinary demo database. The script uses an installed Microsoft Edge browser:
 
 ```sh
 npm run test:web
 ```
 
-It defaults to `http://127.0.0.1:3001`. Optional environment variables are `TEST_BASE_URL` and `TEST_WIDTH`. Screenshots go into ignored `artifacts/screenshots/`.
+It defaults to `http://127.0.0.1:3003` and checks 360, 768, 1024 and 1440 px. `TEST_BASE_URL` can override that isolated test server. Screenshots go into ignored `artifacts/screenshots/`. Stop the verification server with Ctrl+C afterwards. Use `npm run test:live-ai` separately for one real synthetic OpenRouter request; it requires credits and never prints the key.
 
 ## Repository layout
 

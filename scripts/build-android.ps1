@@ -1,3 +1,4 @@
+param([switch]$SkipPrebuild)
 $ErrorActionPreference = 'Stop'
 $workspace = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 # Native codegen resolves real paths, so a short physical staging directory is
@@ -46,11 +47,13 @@ try {
 } finally { Pop-Location }
 Push-Location $client
 try {
-  npx expo prebuild --platform android --no-install
-  if ($LASTEXITCODE -ne 0) { throw 'Expo prebuild failed' }
+  if (-not $SkipPrebuild -or -not (Test-Path -LiteralPath 'android/gradlew.bat')) {
+    npx expo prebuild --platform android --no-install
+    if ($LASTEXITCODE -ne 0) { throw 'Expo prebuild failed' }
+  }
   Push-Location android
   try {
-    ./gradlew.bat :app:assembleRelease --no-daemon --max-workers=2 '-PreactNativeArchitectures=arm64-v8a,armeabi-v7a' '-Dorg.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m'
+    ./gradlew.bat :app:assembleRelease --no-daemon --max-workers=1 '-PreactNativeArchitectures=arm64-v8a,armeabi-v7a' '-Dorg.gradle.jvmargs=-Xmx3072m -XX:MaxMetaspaceSize=768m'
     if ($LASTEXITCODE -ne 0) { throw 'Android release build failed' }
   } finally { Pop-Location }
   $artifacts = Join-Path $workspace 'artifacts'

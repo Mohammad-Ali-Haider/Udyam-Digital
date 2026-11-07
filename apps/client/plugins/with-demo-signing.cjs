@@ -11,6 +11,9 @@ module.exports = function withDemoSigning(config) {
 subprojects { project ->
     ['com.android.library', 'com.android.application'].each { pluginId ->
         project.plugins.withId(pluginId) {
+            project.android.defaultConfig.externalNativeBuild.cmake.arguments.add('-DCMAKE_JOB_POOLS=compile=2;link=1')
+            project.android.defaultConfig.externalNativeBuild.cmake.arguments.add('-DCMAKE_JOB_POOL_COMPILE=compile')
+            project.android.defaultConfig.externalNativeBuild.cmake.arguments.add('-DCMAKE_JOB_POOL_LINK=link')
             if (project.name == 'app') {
                 project.android.externalNativeBuild.cmake.buildStagingDirectory = new File(rootProject.projectDir, '../../../.native-app')
                 project.android.defaultConfig.externalNativeBuild.cmake.arguments.add('-DCMAKE_OBJECT_PATH_MAX=250')
