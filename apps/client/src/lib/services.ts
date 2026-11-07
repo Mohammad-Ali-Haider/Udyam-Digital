@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useFocusEffect } from "expo-router";
 import { useApp, useJourney } from "./provider";
-import { requestId } from "./api";
+import { requestId, RequestError } from "./api";
 import { useRef, useState, useCallback, useEffect } from "react";
 import { storage } from "./storage";
 export function useDraft(name: string) {
@@ -25,6 +25,7 @@ export function useDraft(name: string) {
 }
 export function useResource<T>(path: string, customer = true) {
   const { api, base } = useApp();
+  const client = useQueryClient();
   const [focused, setFocused] = useState(true);
   useFocusEffect(
     useCallback(() => {
@@ -35,7 +36,16 @@ export function useResource<T>(path: string, customer = true) {
   const journey = useJourney(customer);
   const query = useQuery({
     queryKey: ["resource", base, path],
-    queryFn: () => api.request<T>(path),
+    queryFn: async () => {
+      try {
+        return await api.request<T>(path);
+      } catch (error) {
+        if (!customer && error instanceof RequestError && error.status === 401)
+          client.setQueryData(["staff", base], null);
+        throw error;
+      }
+    },
+    staleTime: 0,
     enabled: focused && (!customer || !!journey.data),
     refetchInterval: focused ? 5000 : false,
     refetchIntervalInBackground: false,
@@ -66,9 +76,9 @@ export function useAction(path: string, onSuccess?: () => void) {
     },
     onSuccess: async () => {
       pending.current = null;
+      onSuccess?.();
       await client.invalidateQueries({ queryKey: ["resource"] });
       await client.invalidateQueries({ queryKey: ["journey"] });
-      onSuccess?.();
     },
   });
 }

@@ -6,6 +6,7 @@ import type { CustomerHome, SupportTicket } from "@udyam/shared";
 import { useApp } from "../lib/provider";
 import { useResource, useAction, stateLabel, useDraft } from "../lib/services";
 import { downloadCsv } from "../lib/download";
+import { printStatement } from "../lib/print-statement";
 import { productCopy } from "../lib/products";
 import { Messages } from "./help-panel";
 import {
@@ -223,7 +224,7 @@ export function CustomerServices({
                     <Action
                       mode="outlined"
                       icon="printer"
-                      onPress={() => window.print()}
+                      onPress={() => printStatement(s, language)}
                     >
                       {t("Print statement", "बिल प्रिंट करें")}
                     </Action>
@@ -262,6 +263,7 @@ function Support({ tickets }: { tickets: SupportTicket[] }) {
           ].map(([id, en, hi]) => (
             <Chip
               key={id}
+              disabled={create.isPending}
               selected={category === id}
               onPress={() => setCategory(id)}
               style={{ minHeight: 48 }}
@@ -275,6 +277,7 @@ function Support({ tickets }: { tickets: SupportTicket[] }) {
           mode="outlined"
           label={t("Subject", "विषय")}
           value={subject}
+          disabled={create.isPending}
           onChangeText={setSubject}
         />
         <TextInput
@@ -283,6 +286,7 @@ function Support({ tickets }: { tickets: SupportTicket[] }) {
           multiline
           label={t("Describe the issue", "समस्या बताएं")}
           value={text}
+          disabled={create.isPending}
           onChangeText={setText}
         />
         <ErrorNotice error={create.error} />
@@ -322,6 +326,7 @@ function Ticket({ ticket }: { ticket: SupportTicket }) {
             : t("Your reply", "आपका जवाब")
         }
         value={text}
+        disabled={action.isPending}
         multiline
         onChangeText={setText}
       />

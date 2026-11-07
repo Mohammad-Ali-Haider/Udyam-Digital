@@ -89,8 +89,8 @@ function ProfileForm({ journey }: { journey: Journey }) {
       if (!parsed.success)
         throw new Error(
           t(
-            "Complete all fields. Use at least 2 characters for names and a full shop address.",
-            "सभी फ़ील्ड भरें। नाम कम से कम 2 अक्षर और दुकान का पूरा पता दें।",
+            "Check the shop name, city, state and positive staff, counter and budget values.",
+            "दुकान का नाम, शहर, राज्य और कर्मचारी, काउंटर व बजट की धनात्मक संख्या जाँचें।",
           ),
         );
       await api.request("/profile", "PATCH", {

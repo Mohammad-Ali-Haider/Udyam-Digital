@@ -214,7 +214,8 @@ function Verification({ journey }: { journey: Journey }) {
           </>
         }
       >
-        {!journey.profile!.signatoryName || !journey.profile!.address ? (
+        {journey.profile!.signatoryName.trim().length < 2 ||
+        journey.profile!.address.trim().length < 8 ? (
           <Panel>
             <Text variant="titleLarge">
               {t("Identity for verification", "सत्यापन की पहचान")}
