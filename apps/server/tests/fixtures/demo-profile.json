@@ -1,0 +1,23 @@
+{
+  "profile": {
+    "businessName": "Shree General Store",
+    "signatoryName": "Venkat Gowda",
+    "city": "Mysuru",
+    "state": "Karnataka",
+    "address": "Shop/Unit 8, Market Yard, Mysuru, Karnataka - 764687",
+    "cityTier": 2,
+    "employees": 6,
+    "counters": 1,
+    "budget": 2500,
+    "internet": "hotspot",
+    "fibreAvailable": true,
+    "needs": [
+      "billing"
+    ],
+    "hasGstin": true,
+    "language": "en"
+  },
+  "gstin": "29CUEXS7606Z1ZP",
+  "udyam": "UDYAM-KR-00-0018133",
+  "legalName": "Venkat Gowda (Prop. Shree General Store)"
+}

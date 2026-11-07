@@ -13,6 +13,7 @@ import { openDatabase, type Store } from './db.js';
 import { sessions, quotes, documents, orders } from './schema.js';
 import { DomainError, products } from './catalogue.js';
 import { workspaceRoot } from './config.js';
+import { registerWorkflow } from './workflow.js';
 
 declare module 'fastify' { interface FastifyRequest { sessionId: string } }
 const lifetime = 7 * 86400 * 1000;
@@ -93,7 +94,8 @@ export async function buildApp(options: {store?: Store; logger?: boolean} = {}) 
   app.delete('/api/v1/session',async(req,reply)=> { store.db.delete(sessions).where(eq(sessions.id,req.sessionId)).run();reply.clearCookie('udyam_session',{path:'/'});return {deleted:true}; });
   const expiryTimer = setInterval(()=>store.db.delete(sessions).where(lt(sessions.updatedAt,Date.now()-lifetime)).run(),60*60*1000);
   expiryTimer.unref();
-  app.addHook('onClose',async()=>{clearInterval(expiryTimer);if (!options.store) store.sqlite.close();});
+  const ocr = await registerWorkflow(app,store);
+  app.addHook('onClose',async()=>{clearInterval(expiryTimer);await ocr.close();if (!options.store) store.sqlite.close();});
   return {app,store};
 }
 
