@@ -23,7 +23,7 @@ Run the commands below from the repository root, where `package.json` is located
 ### 1. Clone and install
 
 ```sh
-git clone --branch codex/kirana-service-experience https://github.com/Mohammad-Ali-Haider/Udyam-Digital.git
+git clone https://github.com/Mohammad-Ali-Haider/Udyam-Digital.git
 cd Udyam-Digital
 npm ci
 ```
@@ -137,7 +137,11 @@ This sends one synthetic advisor request to OpenRouter, so it requires internet 
 
 ## Build and install the Android APK
 
-The APK is generated locally and ignored by Git. A fresh clone does not contain it. You can use a separately supplied demo APK, or build one on Windows:
+Download the signed APK from [GitHub Releases](https://github.com/Mohammad-Ali-Haider/Udyam-Digital/releases/latest). Previous published versions remain available in the [release history](https://github.com/Mohammad-Ali-Haider/Udyam-Digital/releases). Repository access is required while this repository is private. Each release includes a SHA-256 checksum for its APK.
+
+The APK contains its application bundle and opens without Metro. Backend features still require the backend running on your computer and the phone connected to the same Wi-Fi, using the computer's LAN address as described above. OpenRouter runs through that backend. Physical-phone verification remains pending your own testing.
+
+Generated APKs are ignored by Git and are attached to releases instead; a fresh clone contains the source, not the APK. To build one on Windows:
 
 ```powershell
 npm run android:apk
