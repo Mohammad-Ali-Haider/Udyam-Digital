@@ -1,4 +1,10 @@
-import { useState, useEffect, useRef, type ComponentRef } from "react";
+import {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  type ComponentRef,
+} from "react";
 import {
   View,
   useWindowDimensions,
@@ -65,7 +71,6 @@ function Conversation({ journey: j }: { journey: Journey }) {
   const [text, setText] = useState("");
   const pending = useRef<{ text: string; requestId: string } | null>(null);
   const scroll = useRef<ComponentRef<typeof ScrollView>>(null);
-  const launcher = useRef<View>(null);
   const state = j.advisorState!;
   const catalogue = useQuery({
     queryKey: ["catalogue", base],
@@ -94,13 +99,15 @@ function Conversation({ journey: j }: { journey: Journey }) {
     : latest;
   const lastReply = j.messages.filter((m) => m.role === "assistant").at(-1);
   const busyRef = useRef(false);
-  const closeChat = () => {
+  const closeChat = useCallback(() => {
     setOpen(false);
     if (Platform.OS === "web")
       requestAnimationFrame(() =>
-        (launcher.current as unknown as HTMLElement)?.focus?.(),
+        document
+          .querySelector<HTMLButtonElement>('[data-testid="advisor-launcher"]')
+          ?.focus(),
       );
-  };
+  }, []);
   useEffect(() => {
     void storage.get(`udyam.advisorDraft.${base}`).then((v) => v && setText(v));
   }, [base]);
@@ -117,12 +124,12 @@ function Conversation({ journey: j }: { journey: Journey }) {
     const key = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
-        setOpen(false);
+        closeChat();
       }
     };
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
-  }, [open, wide]);
+  }, [open, closeChat]);
   const send = useMutation({
     mutationFn: (value: string) => {
       if (pending.current?.text !== value)
@@ -387,6 +394,7 @@ function Conversation({ journey: j }: { journey: Journey }) {
         <Row style={{ alignItems: "flex-end", gap: 8 }}>
           <TextInput
             accessibilityLabel={t("Tell your advisor…", "सलाहकार को बताएं…")}
+            label={t("Your question", "आपका सवाल")}
             placeholder={t(
               "Ask about plans, prices, or your shop…",
               "प्लान, कीमत या दुकान के बारे में पूछें…",
@@ -444,7 +452,7 @@ function Conversation({ journey: j }: { journey: Journey }) {
               }}
             >
               <Button
-                ref={launcher as any}
+                testID="advisor-launcher"
                 mode="contained"
                 icon="message-text-outline"
                 onPress={() => setOpen(true)}
@@ -485,6 +493,7 @@ function Conversation({ journey: j }: { journey: Journey }) {
               )}
             />
             <LiveCart
+              revealed={wide || !open}
               cart={cart}
               budget={j.profile!.budget * 100}
               products={catalogue.data || []}
@@ -530,8 +539,13 @@ function Conversation({ journey: j }: { journey: Journey }) {
                 choose.error || catalogue.error || (!open ? send.error : null)
               }
               retry={() => {
-                void catalogue.refetch();
-                void refresh();
+                if (send.error && pending.current) submit(pending.current.text);
+                else if (choose.error && choose.variables)
+                  choose.mutate(choose.variables);
+                else {
+                  void catalogue.refetch();
+                  void refresh();
+                }
               }}
             />
             <Panel style={{ padding: 20, gap: 12, borderStyle: "dashed" }}>
@@ -606,52 +620,54 @@ function Conversation({ journey: j }: { journey: Journey }) {
           )}
         </View>
       </Shell>
-      <Modal
-        visible={open && !wide}
-        transparent
-        animationType={reducedMotion ? "none" : "slide"}
-        onRequestClose={closeChat}
-        statusBarTranslucent
-      >
-        <KeyboardAvoidingView
-          behavior={
-            Platform.OS === "ios"
-              ? "padding"
-              : Platform.OS === "android"
-                ? "height"
-                : undefined
-          }
-          style={{
-            flex: 1,
-            justifyContent: "flex-end",
-            backgroundColor: "#00000088",
-            paddingTop: Math.max(insets.top, 18),
-          }}
+      {open && !wide && (
+        <Modal
+          visible
+          transparent
+          animationType={reducedMotion ? "none" : "slide"}
+          onRequestClose={closeChat}
+          statusBarTranslucent
         >
-          <Pressable
-            accessibilityLabel={t("Close advisor", "सलाहकार बंद करें")}
-            onPress={closeChat}
+          <KeyboardAvoidingView
+            behavior={
+              Platform.OS === "ios"
+                ? "padding"
+                : Platform.OS === "android"
+                  ? "height"
+                  : undefined
+            }
             style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-            }}
-          />
-          <View
-            accessibilityViewIsModal
-            style={{
-              height: Math.min(height * 0.88, 780),
-              maxHeight: "100%",
-              paddingBottom: Math.max(insets.bottom, 10),
-              paddingHorizontal: width >= 768 ? 40 : 8,
+              flex: 1,
+              justifyContent: "flex-end",
+              backgroundColor: "#00000088",
+              paddingTop: Math.max(insets.top, 18),
             }}
           >
-            {chat(true)}
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
+            <Pressable
+              accessibilityLabel={t("Close advisor", "सलाहकार बंद करें")}
+              onPress={closeChat}
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+              }}
+            />
+            <View
+              accessibilityViewIsModal
+              style={{
+                height: Math.min(height * 0.88, 780),
+                maxHeight: "100%",
+                paddingBottom: Math.max(insets.bottom, 10),
+                paddingHorizontal: width >= 768 ? 40 : 8,
+              }}
+            >
+              {chat(true)}
+            </View>
+          </KeyboardAvoidingView>
+        </Modal>
+      )}
     </>
   );
 }

@@ -122,7 +122,15 @@ export async function registerWorkflow(app: FastifyInstance, store: Store) {
         })
         .where(eq(sessions.id, req.sessionId))
         .run();
-      if (JSON.stringify(result.profile) !== JSON.stringify(session.profile))
+      // An explicit cart edit also replaces a previously chosen alternative,
+      // even when the requirement was already recorded (e.g. add optional CCTV
+      // after choosing Essential). A question alone keeps that choice intact.
+      if (
+        JSON.stringify(result.profile) !== JSON.stringify(session.profile) ||
+        /^(?:(?:please|can you)\s+)?(?:add|remove|make it cheaper|without)\b|जोड़ें|हटाएं|इसे सस्ता/i.test(
+          text,
+        )
+      )
         tx.update(quotes)
           .set({ current: false })
           .where(eq(quotes.sessionId, req.sessionId))

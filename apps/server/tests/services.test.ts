@@ -12,6 +12,62 @@ import { CONSENT_VERSION } from "@udyam/shared";
 const fixture = JSON.parse(
   readFileSync(resolve(serverRoot, "tests/fixtures/demo-profile.json"), "utf8"),
 );
+test("explicit advisor edits replace a selected alternative while questions preserve it", async () => {
+  const key = process.env.OPENROUTER_API_KEY;
+  delete process.env.OPENROUTER_API_KEY;
+  const store = openDatabase(":memory:");
+  const { app } = await buildApp({ store });
+  try {
+    const token = (
+      await app.inject({
+        method: "POST",
+        url: "/api/v1/sessions",
+        payload: { platform: "native" },
+      })
+    ).json().token;
+    const req = async (method: any, path: string, payload?: any) => {
+      const r = await app.inject({
+        method,
+        url: "/api/v1" + path,
+        headers: { authorization: `Bearer ${token}` },
+        payload,
+      });
+      assert.equal(r.statusCode, 200, r.body);
+      return r.json();
+    };
+    await req("PATCH", "/profile", { profile: fixture.profile, revision: 0 });
+    await req("POST", "/advisor/messages", {
+      text: "Billing essential, CCTV optional",
+      requestId: randomUUID(),
+    });
+    let j = await req("GET", "/journey");
+    const quote = await req("POST", "/quotes", {
+      selection: j.advisorState.options[0].selection,
+      revision: j.revision,
+    });
+    await req("POST", "/advisor/messages", {
+      text: "Why do I need this?",
+      requestId: randomUUID(),
+    });
+    j = await req("GET", "/journey");
+    assert.equal(j.quote.id, quote.id);
+    await req("POST", "/advisor/messages", {
+      text: "Add CCTV as optional",
+      requestId: randomUUID(),
+    });
+    j = await req("GET", "/journey");
+    assert.equal(j.quote, null);
+    assert.ok(
+      j.advisorState.options
+        .at(-1)
+        .selection.some((x: any) => x.productId === "P23"),
+    );
+  } finally {
+    await app.close();
+    store.sqlite.close();
+    if (key) process.env.OPENROUTER_API_KEY = key;
+  }
+});
 test("adaptive discovery preserves required needs, refines optional extras and reports budget shortfalls", async () => {
   const key = process.env.OPENROUTER_API_KEY;
   delete process.env.OPENROUTER_API_KEY;

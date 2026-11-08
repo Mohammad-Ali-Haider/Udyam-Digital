@@ -27,12 +27,14 @@ export function useReducedMotion() {
 }
 type CartRow = Selection[number] & { change?: "added" | "removed" | "changed" };
 export function LiveCart({
+  revealed,
   cart,
   budget,
   products,
   busy,
   onRemove,
 }: {
+  revealed: boolean;
   cart: RecommendationOption;
   budget: number;
   products: Product[];
@@ -88,9 +90,15 @@ export function LiveCart({
       });
     previous.current = selection;
     previousTotal.current = cart.monthlyPaise;
-    const timer = setTimeout(() => setRows(selection), reduced ? 100 : 1600);
+  }, [key, cart.monthlyPaise]);
+  useEffect(() => {
+    if (!revealed) return;
+    const timer = setTimeout(
+      () => setRows(JSON.parse(key)),
+      reduced ? 100 : 1600,
+    );
     return () => clearTimeout(timer);
-  }, [key, cart.monthlyPaise, reduced]);
+  }, [key, revealed, reduced]);
   const remaining = budget - cart.monthlyPaise;
   return (
     <View style={{ gap: 16 }}>
@@ -246,6 +254,7 @@ export function LiveCart({
           row={row}
           product={products.find((p) => p.id === row.productId)}
           reduced={reduced}
+          revealed={revealed}
           busy={busy}
           onRemove={onRemove}
         />
@@ -284,12 +293,14 @@ export function LiveCart({
   );
 }
 function Item({
+  revealed,
   row,
   product: p,
   reduced,
   busy,
   onRemove,
 }: {
+  revealed: boolean;
   row: CartRow;
   product?: Product;
   reduced: boolean;
@@ -301,7 +312,7 @@ function Item({
   const [motion] = useState(() => new Animated.Value(1));
   useEffect(() => {
     motion.stopAnimation();
-    if (reduced) {
+    if (reduced || !revealed) {
       motion.setValue(1);
       return;
     }
@@ -314,7 +325,7 @@ function Item({
     });
     animation.start();
     return () => animation.stop();
-  }, [motion, row.change, reduced]);
+  }, [motion, row.change, reduced, revealed]);
   const copy = productCopy[row.productId];
   return (
     <Animated.View

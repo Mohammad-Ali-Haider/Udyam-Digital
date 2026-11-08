@@ -91,6 +91,7 @@ try {
   await expect(page.getByTestId("cart-monthly")).toHaveText("₹1,598");
   await button("Back to cart").press("Enter");
   await expect(button("Ask Udyam")).toBeVisible();
+  await expect(button("Ask Udyam")).toBeFocused();
   await button("Back to business").press("Enter");
   await expect(page).toHaveURL(/\/business$/);
   await page.goBack();
@@ -111,8 +112,19 @@ try {
     await capture(`advisor-chat-${width}`);
     await page.keyboard.press("Escape");
     await expect(button("Ask Udyam")).toBeVisible();
+    await expect(button("Ask Udyam")).toBeFocused();
   }
   await page.setViewportSize({ width: 360, height: 900 });
+  await button("Ask Udyam").press("Enter");
+  await send("Add CCTV as optional");
+  await button("Back to cart").press("Enter");
+  await expect(page.getByTestId("cart-item-P23")).toBeVisible();
+  await capture("advisor-mobile-cart-added");
+  await button("Ask Udyam").press("Enter");
+  await send("Make it cheaper");
+  await button("Back to cart").press("Enter");
+  await expect(page.getByTestId("cart-item-P23")).toHaveCount(0);
+  await expect(page.getByTestId("cart-monthly")).toHaveText("₹1,598");
   await button("Ask Udyam").press("Enter");
   await page
     .getByRole("textbox", { name: "Tell your advisor…", exact: true })
@@ -126,7 +138,21 @@ try {
   await page.route("**/api/v1/advisor/messages", (r) => r.abort());
   await button("Send message").press("Enter");
   await expect(page.getByRole("alert").first()).toBeVisible();
+  await button("Back to cart").press("Enter");
   await page.unroute("**/api/v1/advisor/messages");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(button("Retry")).toHaveCount(1);
+  const [retry] = await Promise.all([
+    page.waitForResponse(
+      (r) =>
+        r.url().endsWith("/advisor/messages") &&
+        r.request().method() === "POST",
+    ),
+    button("Retry").press("Enter"),
+  ]);
+  expect(retry.status()).toBe(200);
+  await expect(page.getByRole("alert")).toHaveCount(0);
+  await button("Ask Udyam").press("Enter");
   await send("Budget 500");
   await button("Back to cart").press("Enter");
   await expect(page.getByText(/over budget —/)).toBeVisible();
