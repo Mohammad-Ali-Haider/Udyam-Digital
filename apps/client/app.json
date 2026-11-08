@@ -2,12 +2,12 @@
   "expo": {
     "name": "Udyam Digital",
     "slug": "udyam-digital",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "scheme": "udyam",
     "userInterfaceStyle": "automatic",
     "android": {
       "package": "com.udyamdigital.prototype",
-      "versionCode": 2,
+      "versionCode": 3,
       "softwareKeyboardLayoutMode": "resize",
       "predictiveBackGestureEnabled": true
     },
