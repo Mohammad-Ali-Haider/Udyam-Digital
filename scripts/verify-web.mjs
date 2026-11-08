@@ -19,7 +19,9 @@ const click = (p, name) =>
   p.getByRole("button", { name, exact: true }).press("Enter");
 async function capture(p, name) {
   await expect(p.getByRole("heading").first()).toBeVisible();
-  await expect(p.getByRole("progressbar")).toHaveCount(0);
+  await expect(p.getByText("Updating your cart…", { exact: true })).toHaveCount(
+    0,
+  );
   await p.screenshot({ path: resolve(output, name + ".png"), fullPage: true });
   expect(
     await p.evaluate(
@@ -57,7 +59,7 @@ try {
     await action(page, "Send message");
   }
   await expect(
-    page.getByRole("button", { name: "Choose this bundle", exact: true }),
+    page.getByRole("button", { name: "Review this cart", exact: true }),
   ).toHaveCount(1);
   await capture(page, "advisor-desktop");
   await click(page, "Get help from a partner");
@@ -101,7 +103,7 @@ try {
     }),
   ).toBeVisible({ timeout: 15000 });
   await capture(staff, "staff-assistance-desktop");
-  await action(page, "Choose this bundle");
+  await action(page, "Review this cart");
   await click(page, "Review your quote");
   await page
     .getByRole("checkbox", { name: /I accept this quote/ })

@@ -18,6 +18,7 @@
     "ocr:prepare": "node scripts/prepare-ocr.mjs",
     "android:apk": "powershell -ExecutionPolicy Bypass -File scripts/build-android.ps1",
     "test:web": "node scripts/verify-web.mjs",
+    "test:advisor": "node scripts/verify-advisor.mjs",
     "test:live-ai": "tsx scripts/verify-live-ai.mts",
     "staff:setup": "tsx scripts/configure-staff.mts",
     "demo:fixtures": "tsx scripts/seed-service-demo.mts",

@@ -4,6 +4,8 @@ A kirana-store prototype for Android and responsive web. It connects an adaptive
 
 The interface supports English and Hindi, with Dark, Light, and System themes. Both clients use the same local backend.
 
+The advisor has an independent live cart and an **Ask Udyam** chat bubble. Desktop shows the conversation beside the cart; phones open a chat panel with **Back to cart**. Use suggested questions or type your own. Confirmed additions/removals animate, and monthly cost, one-time setup and budget remaining update from server results. **Make it cheaper** removes optional extras; essential requirements are retained and an impossible budget is explained. **Review this cart** proceeds to the editable bundle and checkout. Discussion does not accept a quote or place an order.
+
 **For the current Android demo, the phone and the computer running the backend must be on the same Wi-Fi network, or on a local network that allows them to reach each other. Keep the backend running throughout the demo.** The installed APK does not need Metro, but onboarding, OCR, quotes, and orders still need the backend.
 
 ## Requirements
@@ -222,7 +224,7 @@ Only opted-in pre-order journeys appear in assistance queues. Private notes neve
 
 Stop the backend before replacing a build. Startup applies ordered migrations and creates an ignored `.runtime/udyam.sqlite.before-v*-backup` before changing an existing database. Existing quotes and order prices are preserved. Activated legacy orders receive services and exactly one initial sample statement.
 
-The expanded UI requires the **v1.1 APK (version code 2)** and matching backend/web build. The old APK does not acquire new screens automatically. Keep the same ignored signing key to install the update without uninstalling. The previous APK and website are preserved locally under `artifacts/rollback/`. To roll back a database, stop the server and restore the matching pre-migration backup together with the matching old backend; do not combine an old server with a newer database.
+The expanded UI requires the **v1.1.1 APK (version code 3)** and matching backend/web build. The old APK does not acquire new screens automatically. Keep the same ignored signing key to install the update without uninstalling. Previous APKs and website packages are preserved locally under `artifacts/rollback/`. To roll back a database, stop the server and restore the matching pre-migration backup together with the matching old backend; do not combine an old server with a newer database.
 
 ## Data, scope and verification
 
@@ -247,6 +249,7 @@ For browser end-to-end checks, first run `npm run build`, then leave `npm run te
 
 ```sh
 npm run test:web
+npm run test:advisor
 ```
 
 It defaults to `http://127.0.0.1:3003` and checks 360, 768, 1024 and 1440 px. `TEST_BASE_URL` can override that isolated test server. Screenshots go into ignored `artifacts/screenshots/`. Stop the verification server with Ctrl+C afterwards. Use `npm run test:live-ai` separately for one real synthetic OpenRouter request; it requires credits and never prints the key.

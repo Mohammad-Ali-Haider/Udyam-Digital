@@ -24,8 +24,11 @@ test("adaptive discovery preserves required needs, refines optional extras and r
     assert.equal(r.state.options.length, 2);
     assert.deepEqual(r.state.mustHave, ["billing"]);
     r = await discover(r.profile, r.state, "Make it cheaper");
+    assert.match(r.answer, /removed optional extras/i);
     assert.deepEqual(r.state.mustHave, ["billing"]);
     assert.equal(r.state.options.length, 1);
+    r = await discover(r.profile, r.state, "Make it cheaper");
+    assert.match(r.answer, /could not find a cheaper eligible combination/i);
     r = await discover(r.profile, r.state, "Budget 500");
     assert.equal(r.state.options[0].shortfallPaise, 109800);
     r = await discover(r.profile, r.state, "I already have billing software");

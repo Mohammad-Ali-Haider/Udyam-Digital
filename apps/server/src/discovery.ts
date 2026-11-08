@@ -265,6 +265,17 @@ export async function discover(
   let answer = en
     ? "I have kept your required services and updated the comparison."
     : "ज़रूरी सेवाएं रखकर विकल्प अपडेट किए हैं।";
+  if (/cheaper|सस्ता/i.test(text)) {
+    const before = state.options.at(-1)?.monthlyPaise || 0;
+    answer =
+      updated.options[0].monthlyPaise < before
+        ? en
+          ? "I removed optional extras to lower your monthly total, while keeping your essential services. Your cart shows the savings."
+          : "मासिक खर्च घटाने के लिए वैकल्पिक सेवाएं हटाईं। ज़रूरी सेवाएं रखी हैं। बचत कार्ट में दिखती है।"
+        : en
+          ? "I could not find a cheaper eligible combination for your essential needs. Tell me which requirement can change, or whether you already have billing software. I will not remove a must-have silently."
+          : "ज़रूरी सेवाओं के लिए सस्ता पात्र विकल्प नहीं मिला। बताएं कौन सी ज़रूरत बदल सकती है या क्या बिलिंग सॉफ़्टवेयर पहले से है। ज़रूरी सेवा अपने-आप नहीं हटाऊंगा।";
+  }
   if (/why|क्यों/i.test(text))
     answer = en
       ? "Connectivity supports digital billing and online tools. Add-ons are included only for the needs you selected; review each item’s dependency, setup cost and term below."

@@ -272,10 +272,12 @@ export function Shell({
   children,
   step,
   staff = false,
+  floating,
 }: {
   children: React.ReactNode;
   step?: number;
   staff?: boolean;
+  floating?: React.ReactNode;
 }) {
   const { t, language, setLanguage } = useApp();
   const theme = useTheme();
@@ -453,7 +455,7 @@ export function Shell({
               keyboardShouldPersistTaps="handled"
               contentContainerStyle={{
                 padding: desktop ? 36 : 20,
-                paddingBottom: 64,
+                paddingBottom: floating ? 120 : 64,
                 flexGrow: 1,
               }}
             >
@@ -497,6 +499,7 @@ export function Shell({
           </View>
         </View>
       </KeyboardAvoidingView>
+      {floating}
     </SafeAreaView>
   );
 }
