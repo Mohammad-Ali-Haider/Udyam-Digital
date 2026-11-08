@@ -2,12 +2,18 @@
   "expo": {
     "name": "Udyam Digital",
     "slug": "udyam-digital",
-    "version": "1.1.1",
+    "version": "1.1.2",
+    "icon": "./assets/brand/icon.png",
     "scheme": "udyam",
     "userInterfaceStyle": "automatic",
     "android": {
       "package": "com.udyamdigital.prototype",
-      "versionCode": 3,
+      "versionCode": 4,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/brand/adaptive-foreground.png",
+        "monochromeImage": "./assets/brand/adaptive-foreground.png",
+        "backgroundColor": "#C92535"
+      },
       "softwareKeyboardLayoutMode": "resize",
       "predictiveBackGestureEnabled": true
     },

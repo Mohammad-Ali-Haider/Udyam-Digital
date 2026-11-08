@@ -228,7 +228,7 @@ Only opted-in pre-order journeys appear in assistance queues. Private notes neve
 
 Stop the backend before replacing a build. Startup applies ordered migrations and creates an ignored `.runtime/udyam.sqlite.before-v*-backup` before changing an existing database. Existing quotes and order prices are preserved. Activated legacy orders receive services and exactly one initial sample statement.
 
-The expanded UI requires the **v1.1.1 APK (version code 3)** and matching backend/web build. The old APK does not acquire new screens automatically. Keep the same ignored signing key to install the update without uninstalling. Previous APKs and website packages are preserved locally under `artifacts/rollback/`. To roll back a database, stop the server and restore the matching pre-migration backup together with the matching old backend; do not combine an old server with a newer database.
+The current APK is **v1.1.2 (version code 4)**, with the Udyam storefront launcher icon, adaptive icon and Android themed-icon support. It retains the v1.1.1 advisor and service experience and uses the same backend. The old APK does not acquire new screens or launcher artwork automatically. Keep the same ignored signing key to install the update without uninstalling. Previous APKs and website packages are preserved locally under `artifacts/rollback/`. To roll back a database, stop the server and restore the matching pre-migration backup together with the matching old backend; do not combine an old server with a newer database.
 
 ## Data, scope and verification
 

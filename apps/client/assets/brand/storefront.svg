@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Original Udyam storefront mark. Keep the artwork inside the adaptive-icon safe zone. -->
+  <g transform="translate(242 230.75) scale(22.5)" fill="none" stroke="#FFFFFF" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4.25 11.25V20a1.5 1.5 0 0 0 1.5 1.5h12.5a1.5 1.5 0 0 0 1.5-1.5v-8.75"/>
+    <path d="M3 8.75 5 3.5h14l2 5.25v1a2.25 2.25 0 0 1-4.5 0 2.25 2.25 0 0 1-4.5 0 2.25 2.25 0 0 1-4.5 0 2.25 2.25 0 0 1-4.5 0z"/>
+    <path d="m7.5 8.75.75-5.25M12 8.75V3.5m4.5 5.25-.75-5.25M14 21.5v-6.25h3.5v6.25"/>
+    <path d="M7.25 15.25h3.25V18H7.25z"/>
+  </g>
+</svg>
